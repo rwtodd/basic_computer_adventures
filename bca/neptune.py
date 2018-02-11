@@ -1,75 +1,9 @@
 # Voyage to Neptune
 
-# from bca import centered, cls, pause, plural, said_y
+from bca import centered, CheckedInput, cls, pause, plural, said_y
 import random
 from collections import namedtuple
 import time
-
-# Utility Functions
-def centered(txt: str) -> str:
-    """center text assuming 70-columns"""
-    front_space = ' '*( (70 - len(txt))//2 )
-    return front_space + txt
-
-class CheckedInput:
-    def __init__(self, prompt, ntype):
-        self.prompt = prompt
-        self.ntype = ntype
-        self.checks = []
-        self.pre_proc = None
-    def ensure_nonneg(self, msg="Expected a positive number, or zero."):
-        self.ensure_morethan(-1, msg)
-    def ensure_lessthan(self, n, msg):
-        self.checks.append( (lambda x: x < n, msg) )
-    def ensure_morethan(self, n, msg):
-        self.checks.append( (lambda x: x > n, msg)  )
-    def choices(self, lst, msg):
-        self.checks.append( ( lambda x: x in lst , msg)  )
-    def ensure(self, check, msg):
-        self.checks.append( (check, msg) )
-    def pre_process(self,f):
-        self.pre_proc = f
-    def keep_letters(self, n):
-        self.pre_proc = lambda s: s.strip().upper()[:n]
-    def run(self):
-        while True:
-            resp = input(self.prompt)
-            try:
-               n = self.ntype(resp)
-               if self.pre_proc:
-                   n = self.pre_proc(n)
-               ok = True
-               for check, msg in self.checks:
-                   if not check(n):
-                       if callable(msg): msg = msg(n)
-                       print(msg) 
-                       ok = False
-                       break
-               if ok:             # passed all the checks!
-                   return n 
-            except ValueError:
-               if   self.ntype == int: print('An integer is expected here.') 
-               elif self.ntype == float: print('A number is expected here.')
-               else: print("That wasn't the type of value expected here.")
-
-def cls(n = 80) -> None:
-    """clear the screen via printing lots of newlines"""
-    print('\n'*n)
-
-def pause(msg='Press <return> to continue....'):
-    input(msg)
-
-def plural(n: int, thing: str, add='s', alternate=None) -> str:
-    if n == 1:  return f'1 {thing}'
-    if alternate: return f'{n} {alternate}'
-    return f'{n} {thing}{add}'
-
-def said_y(prompt: str) -> bool:
-    """Ask a y/n question and return True if they said yes"""
-    ci = CheckedInput(prompt, str)
-    ci.keep_letters(1)
-    ci.choices("YN", "Please enter 'y' or 'n'.")
-    return ci.run() == 'Y'
 
 def fmt_days(days: int) -> str:
     """format a summary of time, based on a given number of days"""
@@ -134,11 +68,12 @@ def timed_banner(n, msg, delay):
 
 def engine_malfunction(gs: GameState, reduction: float) -> None:
     cls(10)
-    timed_banner(7, '* * ENGINE MALFUNCTION!!! * *', 0.5)
+    timed_banner(3, '* * ENGINE MALFUNCTION!!! * *', 0.5)
     cls(5)
     print(f'You will have to operate your engines at a {int(reduction*100)}% reduction')   
     print(f'in speed until you reach {trip[gs.seg+1].location}.')
     print()
+    pause()
     
 
 def trade_fuel(gs: GameState) -> None:
@@ -191,7 +126,7 @@ def check(c: bool, carp: str) -> bool:
     return c
 
 def breeder_usage(gs: GameState) -> None:
-    bu = CheckedInput("How many breeder reactor cells do you want ot operate? ", int)
+    bu = CheckedInput("How many breeder reactor cells do you want to operate? ", int)
     bu.ensure_nonneg()
     bu.ensure_lessthan(gs.breed + 1, "You don't have that many cells.")
     bu.ensure_lessthan(gs.fuseg/20+1, f'The spent fuel from your engines is only enough to operate {int(gs.fuseg/20)}\n    breeder reactor cells.  Again please...')
