@@ -1,40 +1,85 @@
 # Voyage to Neptune
 
+# from bca import centered, cls, pause, plural, said_y
 import random
 from collections import namedtuple
+import time
 
 # Utility Functions
+def centered(txt: str) -> str:
+    """center text assuming 70-columns"""
+    front_space = ' '*( (70 - len(txt))//2 )
+    return front_space + txt
+
+class CheckedInput:
+    def __init__(self, prompt, ntype):
+        self.prompt = prompt
+        self.ntype = ntype
+        self.checks = []
+        self.pre_proc = None
+    def ensure_nonneg(self, msg="Expected a positive number, or zero."):
+        self.ensure_morethan(-1, msg)
+    def ensure_lessthan(self, n, msg):
+        self.checks.append( (lambda x: x < n, msg) )
+    def ensure_morethan(self, n, msg):
+        self.checks.append( (lambda x: x > n, msg)  )
+    def choices(self, lst, msg):
+        self.checks.append( ( lambda x: x in lst , msg)  )
+    def ensure(self, check, msg):
+        self.checks.append( (check, msg) )
+    def pre_process(self,f):
+        self.pre_proc = f
+    def keep_letters(self, n):
+        self.pre_proc = lambda s: s.strip().upper()[:n]
+    def run(self):
+        while True:
+            resp = input(self.prompt)
+            try:
+               n = self.ntype(resp)
+               if self.pre_proc:
+                   n = self.pre_proc(n)
+               ok = True
+               for check, msg in self.checks:
+                   if not check(n):
+                       if callable(msg): msg = msg(n)
+                       print(msg) 
+                       ok = False
+                       break
+               if ok:             # passed all the checks!
+                   return n 
+            except ValueError:
+               if   self.ntype == int: print('An integer is expected here.') 
+               elif self.ntype == float: print('A number is expected here.')
+               else: print("That wasn't the type of value expected here.")
+
 def cls(n = 80) -> None:
     """clear the screen via printing lots of newlines"""
     print('\n'*n)
 
-def pause():
-    input('Press <return> to continue....')
+def pause(msg='Press <return> to continue....'):
+    input(msg)
 
-def plural_string(n: int, thing: str) -> str:
-    return f'{n} {thing}{(n > 1) and "s" or ""}'
+def plural(n: int, thing: str, add='s', alternate=None) -> str:
+    if n == 1:  return f'1 {thing}'
+    if alternate: return f'{n} {alternate}'
+    return f'{n} {thing}{add}'
+
+def said_y(prompt: str) -> bool:
+    """Ask a y/n question and return True if they said yes"""
+    ci = CheckedInput(prompt, str)
+    ci.keep_letters(1)
+    ci.choices("YN", "Please enter 'y' or 'n'.")
+    return ci.run() == 'Y'
 
 def fmt_days(days: int) -> str:
     """format a summary of time, based on a given number of days"""
     result = []
     years, days = days//365, days % 365
     months, days = int(days/30.5), int(days % 30.5)
-    if years > 0: result.append(plural_string(years,'year'))
-    if months > 0: result.append(plural_string(months,'month'))
-    if days > 0: result.append(plural_string(days, 'day'))
+    if years > 0: result.append(plural(years,'year'))
+    if months > 0: result.append(plural(months,'month'))
+    if days > 0: result.append(plural(days, 'day'))
     return ', '.join(result)
-
-def centered(txt: str) -> str:
-    """center text assuming 70-columns"""
-    front_space = ' '*( (70 - len(txt))//2 )
-    return front_space + txt
-
-def get_y_or_n(prompt: str) -> str:
-    while True:
-        response = input(prompt).upper()
-        if len(response) > 0 and response[0] in 'YN':
-            return response[0]
-        prompt = 'I did not understand that. Please enter "Y" or "N"> '
 
 # Define the trip's segments in terms of locations and distances.
 Segment = namedtuple("Segment", "location distance")
@@ -50,11 +95,18 @@ class GameState():
         self.seg   = 0     # segment of the trip
         self.distance = 0  # distance travelled
 
+        self.fuseg = 0     # amount of fuel to use this segment
         self.rate = 0      # rate of speed (last seg)
         self.time = 0      # time spent (last seg)
         self.ubreed = 0    # used breeder cells (last seg)
         self.fubr = 0      # fuel used per breeder cell (last seg)
         self.fudcy = 0     # how much fuel decays (last seg)
+
+def fuel_report(gs: GameState) -> None:
+    print()
+    print(f'Pounds of of nuclear fuel ready for use: {gs.futot}')
+    print(f'Operational breeder reactor cells: {gs.breed}')
+    print()
 
 def print_conditions(gs: GameState) -> None:
     print()
@@ -71,19 +123,18 @@ def print_conditions(gs: GameState) -> None:
         print(f'You used {gs.ubreed} cells which produced {gs.fubr} pounds of fuel each.')
         if gs.fudcy > 0:
             print(f'{gs.fudcy} pounds of fuel in storage decayed into an unusable state.')
-    print()
-    print(f'Pounds of of nuclear fuel ready for use: {gs.futot}')
-    print(f'Operational breeder reactor cells: {gs.breed}')
-    print()
+    fuel_report(gs)
 
-import time
+def timed_banner(n, msg, delay):
+    cmsg = centered(msg)
+    for _ in range(n):
+        print(cmsg)
+        print()
+        time.sleep(delay)
+
 def engine_malfunction(gs: GameState, reduction: float) -> None:
     cls(10)
-    emf = centered('* * ENGINE MALFUNCTION!!! * *')
-    for _ in range(7):
-        print(emf)
-        print()
-        time.sleep(0.5)
+    timed_banner(7, '* * ENGINE MALFUNCTION!!! * *', 0.5)
     cls(5)
     print(f'You will have to operate your engines at a {int(reduction*100)}% reduction')   
     print(f'in speed until you reach {trip[gs.seg+1].location}.')
@@ -100,49 +151,38 @@ def trade_fuel(gs: GameState) -> None:
     print(f"the rate of {trade} pounds of fuel per cell.")
     print()
 
-    enough_fuel = (gs.futot - trade) >= 1501
+    enough_fuel = (gs.futot - trade) > 1500
     if not enough_fuel: print("You have too little fuel to trade.")
-
-    if ( enough_fuel and get_y_or_n("Would you like to procure more breeder cells (Y or N)? ") == 'Y' ):
-            while True:
-                cells = input('How many cells do you want? ')
-                ncells = int(cells)
-                f = gs.futot - ncells*trade
-                if f > 1500:
-                    gs.futot = f
-                    gs.breed += ncells
-                    return
-                else:
-                    print("That doesn't leave enough fuel to run the engines.")
-    
-    enough_cells = (gs.breed > 50)
-    if not enough_cells:
-        print("You have too few breeder cells to trade.")
+    if enough_fuel and said_y("Would you like to procure more breeder cells? "):
+        ncells = CheckedInput('How many cells do you want? ', int)
+        ncells.ensure_nonneg()
+        ncells.ensure(lambda c: (gs.futot - c*trade) > 1500,
+                      "That doesn't leave enough fuel to run the engines.")
+        ncells = ncells.run()
+        gs.futot -= ncells*trade
+        gs.breed += ncells
         return
     
-    if get_y_or_n("Would you like to trade some breeder cells for fuel (Y or N)? ") == 'Y':
-        while True:
-            cells = input('How many cells would you like to trade? ')
-            ncells = int(cells)
-            f = gs.breed - ncells
-            if f > 49:
-                gs.breed = f
-                gs.futot += ncells*trade
-                return
-            else:
-                print(f"That would leave only {f} cells.  The reactor requires a minimum")
-                print("of 50 cells to remain operational.")
+    enough_cells = (gs.breed > 50)
+    if not enough_cells: print("You have too few breeder cells to trade.")
+    if enough_cells and said_y("Would you like to trade some breeder cells for fuel? "):
+        ncells = CheckedInput('How many cells would you like to trade? ', int)
+        ncells.ensure_nonneg()
+        ncells.ensure_lessthan(gs.breed, "That's more cells than you have!")
+        ncells.ensure_lessthan(gs.breed - 50,
+                               lambda c: f'That would leave only {gs.breed - c} cells. The reactor requires a minimum\n    of 50 cells to remain operational.')
+        ncells = ncells.run()
+        gs.breed -= ncells
+        gs.futot += ncells*trade
 
-def engine_power(gs: GameState) -> int:
+def engine_power(gs: GameState) -> None:
     print()
     print("At this distance from the sun, your solar collectors can fulfill")
     print(f'{56-gs.seg*8}% of the fuel requirements of the engines.  How many pounds')
-    while True:
-        f = input("of nuclear fuel do you want to use on this segment? ")
-        fuseg = int(f)
-        if fuseg <= gs.futot:
-            return fuseg
-        print("That's more fuel than you have.  Now then, how many pounds")
+    lbs = CheckedInput('of nuclear fuel do you want to use on this segment? ', int)
+    lbs.ensure_nonneg()
+    lbs.ensure_lessthan(gs.futot + 1, "That's more fuel than you have.  Now then, how many pounds")
+    gs.fuseg = lbs.run()
 
 def check(c: bool, carp: str) -> bool:
     """complain with CARP if C is not True"""
@@ -150,18 +190,17 @@ def check(c: bool, carp: str) -> bool:
         print(carp)
     return c
 
-def breeder_usage(gs: GameState, fuseg: int) -> None:
-    while True:
-        ub = input("How many breeder reactor cells do you want to operate? ")
-        gs.ubreed = int(ub)
-        if (check(gs.ubreed <= gs.breed, "You don't have that many cells.") and 
-            check(fuseg/20 >= gs.ubreed, f'The spent fuel from your engines is only enough to operate {int(fuseg/20)}\n    breeder reactor cells.  Again please...') and
-            check(gs.ubreed*5 <= gs.futot, f'You have only enough fuel to seed {int(gs.futot/5)} breeder cells.\n    Please adust your number accordingly.')):
-            break
+def breeder_usage(gs: GameState) -> None:
+    bu = CheckedInput("How many breeder reactor cells do you want ot operate? ", int)
+    bu.ensure_nonneg()
+    bu.ensure_lessthan(gs.breed + 1, "You don't have that many cells.")
+    bu.ensure_lessthan(gs.fuseg/20+1, f'The spent fuel from your engines is only enough to operate {int(gs.fuseg/20)}\n    breeder reactor cells.  Again please...')
+    bu.ensure_lessthan(int(gs.futot/5)+1, f'You have only enough fuel to seed {int(gs.futot/5)} breeder cells.\n    Please adust your number accordingly.')
+    gs.ubreed = bu.run()
 
-def calculate_results(gs: GameState, fuseg: int) -> None:
+def calculate_results(gs: GameState) -> None:
     """calculate what happens next, after user input"""
-    eff = min(54 - gs.seg*8+fuseg/40, 104)  # efficiency
+    eff = min(54 - gs.seg*8+gs.fuseg/40, 104)  # efficiency
     engine_fail = random.random()
     if engine_fail < 0.1:                   # 10% chance of engine problem
         reduction = 3*engine_fail
@@ -182,17 +221,24 @@ def calculate_results(gs: GameState, fuseg: int) -> None:
     gs.futot -= gs.fudcy
 
 def one_segment(gs: GameState) -> None:
+    cls(7)
     print_conditions(gs)
     trade_fuel(gs)
-    fuseg = engine_power(gs)
-    gs.futot -= fuseg
-    breeder_usage(gs,fuseg)
+    print('\nAfter trading:')
+    fuel_report(gs)
+    engine_power(gs)
+    gs.futot -= gs.fuseg
+    breeder_usage(gs)
     gs.futot -= 5*gs.ubreed
-    calculate_results(gs, fuseg)
+    calculate_results(gs)
     gs.seg += 1
+    cls(8)
+    timed_banner(3, '* * Travelling * *', 0.5)
     
 def endgame(gs: GameState) -> None:
-    cls(4)
+    cls(6)
+    print(centered(" * * N E P T U N E ! * *"))
+    cls(2)
     print(f'You finally reached Neptune in {fmt_days(gs.totime)}.')
     print("Had your engines run at 100% efficiency the entire way, you would")
     print("have averaged 51,389 mph and completed the trip in exactly 6 years.")
@@ -216,6 +262,7 @@ def endgame(gs: GameState) -> None:
     else:
         print(f'Fortunately you have {gs.breed} operational breeder reactor cells')
         print("for your return trip.  Very good.")
+    print()  
     back_to_2 = max(int(42250.0/(8.0+gs.futot/40.0)), 405)
     print(f'With your remaining {gs.futot} pounds of fuel and {gs.breed} breeder')
     print(f'cells, to get back to Theta 2 will take {fmt_days(back_to_2)}.')
@@ -275,5 +322,6 @@ def run_game():
 if __name__ == "__main__":
     while True:
         run_game()
-        if get_y_or_n('\n\n\nWould you like to play again? ') == 'N':
+        cls(3)
+        if not said_y('Would you like to play again? '):
             break
