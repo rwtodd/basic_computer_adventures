@@ -8,7 +8,7 @@ import time
 def fmt_days(days: int) -> str:
     """format a summary of time, based on a given number of days"""
     result = []
-    years, days = days//365, days % 365
+    years, days = int(days//365), days % 365
     months, days = int(days/30.5), int(days % 30.5)
     if years > 0: result.append(plural(years,'year'))
     if months > 0: result.append(plural(months,'month'))
@@ -113,7 +113,7 @@ def trade_fuel(gs: GameState) -> None:
 def engine_power(gs: GameState) -> None:
     print()
     print("At this distance from the sun, your solar collectors can fulfill")
-    print(f'{56-gs.seg*8}% of the fuel requirements of the engines.  How many pounds')
+    print(f'{56-(gs.seg+1)*8}% of the fuel requirements of the engines.  How many pounds')
     lbs = CheckedInput('of nuclear fuel do you want to use on this segment? ', int)
     lbs.ensure_nonneg()
     lbs.ensure_lessthan(gs.futot + 1, "That's more fuel than you have.  Now then, how many pounds")
@@ -135,7 +135,7 @@ def breeder_usage(gs: GameState) -> None:
 
 def calculate_results(gs: GameState) -> None:
     """calculate what happens next, after user input"""
-    eff = min(54 - gs.seg*8+gs.fuseg/40, 104)  # efficiency
+    eff = min(54 - (gs.seg+1)*8+gs.fuseg/40, 104)  # efficiency
     engine_fail = random.random()
     if engine_fail < 0.1:                   # 10% chance of engine problem
         reduction = 3*engine_fail
