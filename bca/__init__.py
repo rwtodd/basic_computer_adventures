@@ -49,7 +49,7 @@ class CheckedInput:
 
 def cls(n = 80) -> None:
     """clear the screen via printing lots of newlines"""
-    print('\n'*n)
+    print('\n'*n,end='')
 
 def pause(msg='Press <return> to continue....'):
     input(msg)
