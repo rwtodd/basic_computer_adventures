@@ -93,8 +93,6 @@ dinners = ["Huitres de Beernham","Cantalop glace au Marsale",
            "Les Mignardises","Selection du vins et liquors" ]
 
 
-# M E A L S
-
 def serve_breakfast() -> None:
     cls(4)
     print("Breakfast is now being served in the restaurant car.")
@@ -132,4 +130,53 @@ def serve_dinner() -> None:
        print()
     pause('Press <return> when you have finished eating.')
 
+title = """
+
+
+                       The Orient Express, 1923
+
+
+                      (c) by David H. Ahl, 1986 
+
+
+
+"""
+
+scenario = """
+        It is February 1923.  The following note is received at
+   Whitehall: 'If you will furnish me with a new identity and a
+   lifetime supply of Scotch, I will give up my life of arms dealing
+   and will provide you with much valuable information.  I will be
+   on the Orient Express tonight.  But you must contact me before
+   the train reaches Uzunkopru or that swine dealer of Maxim machine
+   guns will have me killed by bandits like he did to Baron Wunster
+   last month.'  The note is not signed.
+        You, a British agent, are assigned to take the train, rescue
+   the defector, and arrest the killer.
+        You know there are five notorious arms dealers of different
+   nationalities operating in Europe under an uneasy truce as each
+   deals in a different kind of weapon.  But it is obvious that the
+   truce has ended.
+
+
+"""
+
+def intro() -> None:
+    cls()
+    print(title)
+    pause()
+    print(scenario)
+    pause("Press <return> to call a taxi...") 
+
+def run_game() -> None:
+    random.shuffle(conversations)
+    intro()
+
+
+if __name__ == "__main__":
+    while True:
+        run_game()
+        cls(3)
+        if not said_y('Would you like to play again? '):
+            break
 
