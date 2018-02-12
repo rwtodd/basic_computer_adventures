@@ -104,6 +104,7 @@ class GameState:
         self.derailed = False       # have we derailed yet?
         self.bandits  = False       # have bandits attacked?
         self.hazard_delay = 0       # days delayed by hazards
+        self.conversations = random.sample(conversations,len(conversations))  
 
 # ######################################################################################
 
@@ -144,6 +145,8 @@ def bandits(gs: GameState) -> None:
     print("You are rudely awakened from a deep sleep by a loud noise")
     print("as the train jerks to a halt.")
     time.sleep(1.0) 
+    print()
+    ring_doorbell()
     print()
     print("You are shocked to see a bandit waving a gun in your face.")
     print("He demands you give him your wallet, jewelry, and watch.")
@@ -211,12 +214,12 @@ segments = [Segment(TimeFrame.Early,    0,HazardType.No     ,1,   0,1430,"London
             Segment(TimeFrame.Dinner,   0,HazardType.No     ,4, 505, 545,"Uzunkopru","Turkey"),
             Segment(TimeFrame.Early,    0,HazardType.No     ,4,1230,   0,"Constantinople","Turkey") ]
 
-people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)"
-           "Herbert Hoover","Baron Rothschild","Guido Famadotta","Gustav Mahler"
-           "Robert Baden-Powell","Fritz Kreisler","Dame Melba","Gerald Murphy"
-           "Calouste Gulbenkian","Captain G.T. Ward","Sir Ernest Cassel"
-           "Major Custance","F. Scott Fitzgerald","Elsa Maxwell","Mata Hari"
-           "Clayton Pasha","Arturo Toscanini","Maharajah Behar","Leon Wenger"
+people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
+           "Herbert Hoover","Baron Rothschild","Guido Famadotta","Gustav Mahler",
+           "Robert Baden-Powell","Fritz Kreisler","Dame Melba","Gerald Murphy",
+           "Calouste Gulbenkian","Captain G.T. Ward","Sir Ernest Cassel",
+           "Major Custance","F. Scott Fitzgerald","Elsa Maxwell","Mata Hari",
+           "Clayton Pasha","Arturo Toscanini","Maharajah Behar","Leon Wenger",
            "Sarah Bernhardt","Arthur Vetter","Isadora Duncan","David K.E. Bruce" ]
 
 Occupation = Enum('Occupation','Waiter Chef Passenger', start=0)
@@ -290,6 +293,29 @@ def run_hazards(gs: GameState) -> None:
         [snow,bandits][gs.segment.ht.value](gs)
     derail(gs)
 
+def ring_doorbell() -> None:
+    for _ in range(2):
+       print(centered("*  * BRRRINNNG! *  *"))
+       print()
+       time.sleep(1.0) 
+    print(centered("*  * KNOCK! *  *"))
+    print()
+    time.sleep(1.0) 
+    pause('Press <return> to open the door...')
+    print()
+
+def run_convo(gs: GameState) -> None:
+    for i in range(gs.segment.nconv):
+        cls(2)
+        convo = gs.conversations.pop()
+        ring_doorbell()
+        if convo.who == Occupation.Passenger:
+            person = people[random.randrange(3,26)]
+        else:
+            person = people[convo.who.value]
+        print(f'Standing there is {person}, who tells you:')
+        print(convo.msg)   # TODO: word-wrap message
+
 def intro() -> None:
     cls()
     print(title)
@@ -299,13 +325,12 @@ def intro() -> None:
 
 def run_game() -> None:
     gs = GameState()
-    random.shuffle(conversations)
     intro()
     for j,seg in zip(range(1,25),segments):
         gs.segment = seg 
         cls(4)
         print(centered(f'Segment {j}'))
-        cls(2)
+        run_convo(gs)
         run_hazards(gs)
         time.sleep(1.0)
 
