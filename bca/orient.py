@@ -294,23 +294,29 @@ def run_hazards(gs: GameState) -> None:
     derail(gs)
 
 def ring_doorbell() -> None:
-    for _ in range(2):
-       print(centered("*  * BRRRINNNG! *  *"))
-       print()
-       time.sleep(1.0) 
-    print(centered("*  * KNOCK! *  *"))
-    print()
-    time.sleep(1.0) 
+    for _ in range(random.randrange(1,3)):
+        print(centered("*  * BRRRINNNG! *  *"))
+        print()
+        time.sleep(1.0) 
+    if random.randrange(0,2) == 1:
+        print(centered("*  * KNOCK! *  *"))
+        print()
+        time.sleep(1.0) 
     pause('Press <return> to open the door...')
     print()
 
+def run_meals(gs: GameState) -> None:
+    if gs.segment.tf == TimeFrame.Breakfast:  serve_breakfast()
+    elif gs.segment.tf == TimeFrame.Lunch:  serve_lunch()
+    elif gs.segment.tf == TimeFrame.Dinner:  serve_dinner()
+       
 def run_convo(gs: GameState) -> None:
     for i in range(gs.segment.nconv):
         cls(2)
         convo = gs.conversations.pop()
         ring_doorbell()
         if convo.who == Occupation.Passenger:
-            person = people[random.randrange(3,26)]
+            person = people[random.randrange(2,25)]
         else:
             person = people[convo.who.value]
         print(f'Standing there is {person}, who tells you:')
@@ -324,12 +330,16 @@ def intro() -> None:
     pause("Press <return> to call a taxi...") 
 
 def run_game() -> None:
+    random.seed()
     gs = GameState()
     intro()
     for j,seg in zip(range(1,25),segments):
         gs.segment = seg 
         cls(4)
-        print(centered(f'Segment {j}'))
+        print(centered(f'~ February {j + 13 + gs.hazard_delay} 1923 ~'))
+        print(centered(f'~ {gs.segment.city}, {gs.segment.country} ~'))
+        print()
+        run_meals(gs)
         run_convo(gs)
         run_hazards(gs)
         time.sleep(1.0)
