@@ -10,25 +10,24 @@ from collections import namedtuple
 # The identities of the killer and defector were beautifully hidden in the original
 # program.  I had to work out who they were by some sleuthing in the code, since I
 # do not have a running GW-BASIC anymore.  The two functions below embody the answers
-# I found.  `killer()` re-creates the original computation, which was distributed
-# across the original program.  `defector()` can't do that for technical reasons,
+# I found.  `defector` re-creates the original computation, which was distributed
+# across the original program.  `killer()` can't do that for technical reasons,
 # and instead hides the answer behind base64 encoding.
 
-def killer() -> int:
-    """works out the killer by retracing the steps of the original BASIC program"""
+def defector() -> int:
+    """works out the defector by retracing the steps of the original BASIC program"""
     posx=len("Press any key when you have finished eating")+18
-    meals = zip(range(1,999), 
-                [0, 1, 0, 4, 4, 0, 3, 0, 0, 2, 1, 0, 0, 0, 4, 4, 3, 2, 0, 1, 4, 4, 3, 0])
+    meals = enumerate([0, 1, 0, 4, 4, 0, 3, 0, 0, 2, 1, 0, 0, 0, 4, 4, 3, 2, 0, 1, 4, 4, 3, 0], 1)
     a3 = 0
     for j in (j for j,meal in meals if meal in [1,3] and j < 23):
        a3 = a3 + 5*(j+1)-posx
     return a3
 
-def defector() -> int:
-    """i can't retrace the program for the defector, because it relies
+def killer() -> int:
+    """i can't retrace the program for the killer, because it relies
        gw-basic's ON ERROR GOTO mechanism for OUT OF DATA (err 4), 
        which is brilliant.  I'll just hide it behind base64 for now,
-       so you cant' see who it is by accident."""
+       so you can't see who it is by accident."""
     from base64 import b64decode
     return int(b64decode('NA==')) 
 
@@ -105,6 +104,10 @@ class GameState:
         self.bandits  = False       # have bandits attacked?
         self.hazard_delay = 0       # days delayed by hazards
         self.conversations = random.sample(conversations,len(conversations))  
+        self.my_defector = None     # player choice
+        self.my_killer = None       # player choice
+        self.perfection = False     # did you get everything right?
+        self.alive = True           # are we alive?
 
 # ######################################################################################
 
@@ -343,8 +346,8 @@ def announce_arrival(seg):
     minutes_late = 18 - random.randrange(0,27)
     ta = seg.tarrive + minutes_late
     print(f'You have arrived at {seg.city} at {fmt_time(ta)}, ', end='')
-    if minutes_late > 0:  print(f'just {minutes_late} mintues late.')
-    elif minutes_late < 0: print(f'almost {-minutes_late} minutes early.')
+    if minutes_late > 0:  print(f'just {plural(minutes_late,"minute")} late.')
+    elif minutes_late < 0: print(f'almost {plural(-minutes_late,"minute")} early.')
     else: print('right on time!')
     return ta
 
@@ -367,11 +370,45 @@ def first_departure() -> None:
     cls(4)
     pause()
 
-def arrive_depart(j, seg):
+def turkish_police(gs: GameState) -> None:
+    ci = CheckedInput('Who do you identify? ',int)
+    ci.choices([1,2,3,4,5],"Please enter the number for your choice ([1-5])") 
+
+    cls(4)
+    print("The Turkish police have boarded the train.  They have been")
+    print("asked to assist you, but for them to do so you will have to")
+    print("identify the killer (the dealer in machine guns) and the defector")
+    print("(the Scotch drinker) to them.  The arms dealers are lined")
+    print("up as follows:")
+    print()
+    print("  (1) Austrian, (2) Turk, (3) Pole, (4) Greek, (5) Rumanian.") 
+    print()
+    print("They ask who the defector is. ", end='')
+    gs.my_defector = ci.run()
+    time.sleep(1.0)
+    print()
+    print("They ask who the killer is. ", end='')
+    ci.ensure(lambda c: c != gs.my_defector, 
+             "You already chose him for the defector!")
+    gs.my_killer = ci.run()
+    time.sleep(1.5)
+    print()
+    print("The police take into custody the man you identified as the")
+    print("killer and provide a guard to ride on the train with the")
+    print("defector.  You return to your compartment, praying that")
+    print("you made the correct deductions and identified the right men.")
+    print()
+    pause()
+    print()
+
+def arrive_depart(j: int, gs: GameState) -> None:
+    seg = gs.segment
     ta = announce_arrival(seg)
     td = seg.tdepart
     if ta > (td - 2):  td = ta + 4  # ensure depart after arrival
     
+    if j == 24: return  # end of game...
+
     if seg.tf == TimeFrame.Night:
         print("Asleep in your compartment, you barely notice that the")
         print(f"departure was right on time at {fmt_time(td)}.")
@@ -379,8 +416,7 @@ def arrive_depart(j, seg):
         pause()
         return
        
-    if j == 23:
-        pass # TODO: identify killer gosub 1340
+    if j == 23: turkish_police(gs)
   
     print(f'Departure is at {fmt_time(td)}.')
     print()
@@ -393,6 +429,69 @@ def arrive_depart(j, seg):
     print('All aboard....')
     time.sleep(1.0)
     print('The train is leaving.')
+
+def determine_outcome(gs: GameState) -> None:
+    d, k = defector(), killer()
+
+    # Did you get everything right?
+    if gs.my_defector == d and gs.my_killer == k:
+        gs.perfection = True
+        return
+    
+    # The defector is killed by bandits if you didn't either
+    # protect him or arrest him
+    if d not in [gs.my_defector, gs.my_killer]:
+        print()
+        print("You are suddenly awakened by what sounded like a gunshot.")
+        print("You rush to the defector's compartment, but he is okay.")
+        print("However, one of the other arms dealers has been shot.")
+        time.sleep(2.0)
+        print()
+        print("You review the details of the case in your mind and realize")
+        print("that you came to the wrong conclusion and due to your mistake")
+        print("a man lies dead at the hand of bandits.  You return to your")
+        print("compartment and are consoled by the thought that you correctly")
+        print("identified the killer and that he will hang for his crimes.")
+        print()
+        print("At least, you hope that's true...")
+        pause()
+
+    # if you didn't identify the killer, he kills you!
+    if k != gs.my_killer:
+        ring_doorbell()
+        print("A man is standing outside.  He says, 'You made a")
+        print("mistake.  A bad one.  You see, I am the machine gun dealer.'")
+        if gs.my_killer == d:
+            print()
+            print("'Moreover,' he says, 'you identified the man who was cooperating")
+            print("with you as the killer.  So the state will take care of him.  Ha.'")
+        print()
+        time.sleep(2.0)
+        print("He draws a gun.  BANG.  You are dead.")
+        print()
+        print("You never know that the train arrived at 12:30, right on")
+        print("time at Constantinople, Turkey.") 
+        cls(3)
+        gs.alive = False
+        pause()
+
+def endgame(gs: GameState) -> None:
+    cls(4)
+    print("Your journey has ended.  Georges Nagelmackers and the")
+    print("management of Cie. Internationale des Wagons-Lits ")
+    print("hope you enjoyed your trip on the Orient Express, the")
+    print("most famous train in the world.")
+    if gs.perfection:
+        print()
+        print("Whitehall telegraphs congratulations for identifying both")
+        print("the killer and defector correctly.")
+        time.sleep(1.0) 
+        for _ in range(3):
+            cls(2)
+            print(centered('* * CONGRATULATIONS! * *'))
+            time.sleep(1.5) 
+    cls(4)
+    pause()
 
 def run_game() -> None:
     random.seed()
@@ -407,15 +506,21 @@ def run_game() -> None:
 
         if j == 1: 
             first_departure()
+        elif j < 24:
+            arrive_depart(j,gs)
         else:
-            arrive_depart(j,seg)
+            if gs.alive: announce_arrival(seg)
+            endgame(gs)
+            return
 
         # TODO: train noises??
-        # TODO: Identify killer? gosub 1490
-        run_meals(gs)
-        run_convo(gs)
-        run_hazards(gs)
-        time.sleep(1.0)
+        if j == 23:  determine_outcome(gs)
+   
+        if gs.alive:
+            run_meals(gs)
+            run_convo(gs)
+            run_hazards(gs)
+            time.sleep(1.0)
 
 if __name__ == "__main__":
     while True:
