@@ -63,6 +63,7 @@ def said_y(prompt: str) -> bool:
     """Ask a y/n question and return True if they said yes"""
     ci = CheckedInput(prompt, str)
     ci.keep_letters(1)
+    ci.ensure(lambda c: len(c) == 1, "Please enter 'y' or 'n'.")
     ci.choices("YN", "Please enter 'y' or 'n'.")
     return ci.run() == 'Y'
 
