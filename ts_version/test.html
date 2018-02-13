@@ -1,0 +1,45 @@
+<html>
+<head>
+    <script type="text/javascript" src="js/bca.js"></script>
+    <style>
+        body {
+            background: #dddddd;
+        }
+        #story {
+            max-width: 6in;
+            margin: auto;
+            font-size: 14pt;
+            background: #dddddd;
+        }
+        div.adventure-text {
+            background: #ffffff;
+            margin-top: 2em;
+            padding: 1em 1em 1em 1em;
+            border: 1px solid black;
+        }
+    </style>
+    <script>
+        async function do_game(ui) {
+            for(let i = 0 ; i < 20; i++) {
+                ui.section('Part ' + (i+1))    
+                ui.text('This is the first message')
+                await ui.pause()
+                ui.text('This is the second message')
+                await ui.pause()
+            }
+        }
+
+        window.onload = function() {
+            const content = document.getElementById("story")
+            var ui = new AdventureUtils.UI(content)
+            do_game(ui)
+        }
+    </script>
+    <title>Example Adventure</title>
+</head>
+<body>
+<div id='story'>
+
+</div>
+</body>
+</html>
