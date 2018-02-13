@@ -134,6 +134,8 @@ def snow(gs: GameState) -> None:
         gs.hazard_delay += 2 
         print("You are stranded for two days until a snowplow clears the track.")
         print(f"The train is now exactly {gs.hazard_delay} days behind schedule.")
+    cls(2)
+    pause()
 
 def bandits(gs: GameState) -> None:
     if gs.bandits or (random.random() > 0.04): return    # 4% chance of bandits
@@ -155,6 +157,8 @@ def bandits(gs: GameState) -> None:
     print("The bandits are off the train in a few moments with")
     print("their loot.  They disappear into the forest.  No one")
     print("was injured, and the train resumes its journey.")
+    cls(3)
+    pause()
 
 def derail(gs: GameState) -> None:
     if gs.derailed or (random.random() > 0.02): return  # 2% chance of derailment
@@ -177,7 +181,9 @@ def derail(gs: GameState) -> None:
     print("You are stranded for exactly one day while the track is")
     print("repaired and a new locomotive obtained." )
     print()
-    print(f"The train is now exactly {gs.hazard_delay} days behind schedule.")
+    print(f"The train is now exactly {plural(gs.hazard_delay,'day')} behind schedule.")
+    print()
+    pause()
 
 # ######################################################################################
 
@@ -186,33 +192,32 @@ def derail(gs: GameState) -> None:
 # Trip Data (segments, conversations, etc.)
 
 TimeFrame = Enum("TimeFrame", "Early Breakfast Lunch Dinner Night", start=0)
-HazardType = Enum("HazardType", "Snow Bandits No", start=0) 
 
 Segment = namedtuple("Segment", "tf nconv ht day tarrive tdepart city country")
-segments = [Segment(TimeFrame.Early,    0,HazardType.No     ,1,   0,1430,"London","England"),
-            Segment(TimeFrame.Breakfast,2,HazardType.No     ,1,1855,1919,"Calais","France"),
-            Segment(TimeFrame.Early,    1,HazardType.No     ,1,2233,2253,"Paris (Nord)","France"),
-            Segment(TimeFrame.Night,    0,HazardType.No     ,1,2316,2350,"Paris (Lyon)","France"),
-            Segment(TimeFrame.Night,    0,HazardType.Snow   ,2, 600, 620,"Vallorbe","Switzerland"),
-            Segment(TimeFrame.Early,    1,HazardType.No     ,2, 700, 707,"Lausanne","Switzerland"),
-            Segment(TimeFrame.Dinner,   1,HazardType.Snow   ,2, 732, 734,"Montreux","Switzerland"),
-            Segment(TimeFrame.Early,    1,HazardType.Snow   ,2, 919, 927,"Brig","Switzerland"),
-            Segment(TimeFrame.Early,    3,HazardType.No     ,2,1005,1025,"Domodossola","Italy"),
-            Segment(TimeFrame.Lunch,    2,HazardType.No     ,2,1223,1320,"Milan","Italy"),
-            Segment(TimeFrame.Breakfast,2,HazardType.No     ,2,1705,1730,"Venice (S. Lucia)","Italy"),
-            Segment(TimeFrame.Early,    1,HazardType.No     ,2,1954,2014,"Trieste","(Free State)"),
-            Segment(TimeFrame.Early,    1,HazardType.No     ,2,2044,2110,"Opicina","Italy"),
-            Segment(TimeFrame.Early,    2,HazardType.No     ,2,2119,2225,"Sezana","Slovenia"),
-            Segment(TimeFrame.Night,    0,HazardType.No     ,3,  21, 107,"Ljubljana","Slovenia"),
-            Segment(TimeFrame.Night,    0,HazardType.No     ,3, 310, 330,"Zagreb","Croatia"),
-            Segment(TimeFrame.Dinner,   2,HazardType.No     ,3, 900, 956,"Belgrade","Serbia"),
-            Segment(TimeFrame.Lunch,    1,HazardType.No     ,3,1334,1356,"Crveni Krst","Serbia"),
-            Segment(TimeFrame.Early,    2,HazardType.No     ,3,1555,1634,"Caribrod","Serbia"),
-            Segment(TimeFrame.Breakfast,2,HazardType.No     ,3,1856,1935,"Sofia","Bulgaria"),
-            Segment(TimeFrame.Night,    0,HazardType.Bandits,4,  45, 120,"Svilengrad","Bulgaria"),
-            Segment(TimeFrame.Night,    0,HazardType.Bandits,4, 406, 445,"Pithion","Greece"),
-            Segment(TimeFrame.Dinner,   0,HazardType.No     ,4, 505, 545,"Uzunkopru","Turkey"),
-            Segment(TimeFrame.Early,    0,HazardType.No     ,4,1230,   0,"Constantinople","Turkey") ]
+segments = [Segment(TimeFrame.Early,    0,None   ,1,   0,1430,"London","England"),
+            Segment(TimeFrame.Breakfast,2,None   ,1,1855,1919,"Calais","France"),
+            Segment(TimeFrame.Early,    1,None   ,1,2233,2253,"Paris (Nord)","France"),
+            Segment(TimeFrame.Night,    0,None   ,1,2316,2350,"Paris (Lyon)","France"),
+            Segment(TimeFrame.Night,    0,snow   ,2, 600, 620,"Vallorbe","Switzerland"),
+            Segment(TimeFrame.Early,    1,None   ,2, 700, 707,"Lausanne","Switzerland"),
+            Segment(TimeFrame.Dinner,   1,snow   ,2, 732, 734,"Montreux","Switzerland"),
+            Segment(TimeFrame.Early,    1,snow   ,2, 919, 927,"Brig","Switzerland"),
+            Segment(TimeFrame.Early,    3,None   ,2,1005,1025,"Domodossola","Italy"),
+            Segment(TimeFrame.Lunch,    2,None   ,2,1223,1320,"Milan","Italy"),
+            Segment(TimeFrame.Breakfast,2,None   ,2,1705,1730,"Venice (S. Lucia)","Italy"),
+            Segment(TimeFrame.Early,    1,None   ,2,1954,2014,"Trieste","(Free State)"),
+            Segment(TimeFrame.Early,    1,None   ,2,2044,2110,"Opicina","Italy"),
+            Segment(TimeFrame.Early,    2,None   ,2,2119,2225,"Sezana","Slovenia"),
+            Segment(TimeFrame.Night,    0,None   ,3,  21, 107,"Ljubljana","Slovenia"),
+            Segment(TimeFrame.Night,    0,None   ,3, 310, 330,"Zagreb","Croatia"),
+            Segment(TimeFrame.Dinner,   2,None   ,3, 900, 956,"Belgrade","Serbia"),
+            Segment(TimeFrame.Lunch,    1,None   ,3,1334,1356,"Crveni Krst","Serbia"),
+            Segment(TimeFrame.Early,    2,None   ,3,1555,1634,"Caribrod","Serbia"),
+            Segment(TimeFrame.Breakfast,2,None   ,3,1856,1935,"Sofia","Bulgaria"),
+            Segment(TimeFrame.Night,    0,bandits,4,  45, 120,"Svilengrad","Bulgaria"),
+            Segment(TimeFrame.Night,    0,bandits,4, 406, 445,"Pithion","Greece"),
+            Segment(TimeFrame.Dinner,   0,None   ,4, 505, 545,"Uzunkopru","Turkey"),
+            Segment(TimeFrame.Early,    0,None   ,4,1230,   0,"Constantinople","Turkey") ]
 
 people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
            "Herbert Hoover","Baron Rothschild","Guido Famadotta","Gustav Mahler",
@@ -222,34 +227,32 @@ people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
            "Clayton Pasha","Arturo Toscanini","Maharajah Behar","Leon Wenger",
            "Sarah Bernhardt","Arthur Vetter","Isadora Duncan","David K.E. Bruce" ]
 
-Occupation = Enum('Occupation','Waiter Chef Passenger', start=0)
-
 Conversation = namedtuple("Conversation", "who msg")
 conversations = [
-  Conversation(Occupation.Passenger,"I've heard they all have different color chalets on a north-south ridge in the Tyrol region."),
-  Conversation(Occupation.Passenger,"The Austrian said he likes the look of natural wood and would never paint his chalet."),
-  Conversation(Occupation.Passenger,"They gave the waiter a difficult time.  The Turk ordered beer and the other four all ordered different drinks."),
-  Conversation(Occupation.Passenger,"The Greek told me he hunts deer, but he never hunts with any of the others because they all hunt different animals."),
-  Conversation(Occupation.Waiter,   "My brother delivered a case of Kirsch to the green chalet.  He remembers it being just south of the gaudy red chalet."),
-  Conversation(Occupation.Passenger,"The Pole asked me--can you imagine that?--if I wanted to buy any howitzers."),
-  Conversation(Occupation.Chef,     "One of them asked me to cook some pheasant that he shot.  He said that I should come to the yellow chalet."),
-  Conversation(Occupation.Waiter,   "One time my brother said he delivered a case of Cognac to the middle chalet."),
-  Conversation(Occupation.Passenger,"The Rumanian said he had the shortest distance to drive from his chalet to the railroad station at Munich."),
-  Conversation(Occupation.Passenger,"One of them bragged that his military rifles were so accurate that he bagged a fox with one of them."),
-  Conversation(Occupation.Passenger,"The man who hunts wild boar said that the pistol dealer who lives in the chalet next to his often gives loud parties."),
-  Conversation(Occupation.Passenger,"The pheasant hunter complained that the arms dealer in the chalet next to his makes far too much noise testing his mortars."),
-  Conversation(Occupation.Passenger,"The gin drinker bragged that he shot sixty wart hogs on a single day last August."),
-  Conversation(Occupation.Passenger,"The Rumanian said he looks out on a blue chalet."),
-  Conversation(Occupation.Passenger,"The Cognac drinker bragged that he is the best hunter and can drink more than all of the rest of them combined."),
-  Conversation(Occupation.Passenger,"The one carrying the pistol said he thinks the boar's head over his neighbor's doorway is revolting."),
-  Conversation(Occupation.Passenger,"One of them said that one day he'd like to lob a mortar shell at the string of pheasants drying in his neighbor's yard."),
-  Conversation(Occupation.Passenger,"The Kirsch drinker said he loved the roast chicken he had to eat last night."),
-  Conversation(Occupation.Passenger,"The one carrying the pistol had a second helping of pie."),
-  Conversation(Occupation.Passenger,"One commented that his beef dinner wasn't nearly as good as the boar that he shot last week."),
-  Conversation(Occupation.Passenger,"The Pole asked for more soup."),
-  Conversation(Occupation.Passenger,"The one eating all the cheese mumbled that it was the same color as his chalet."),
-  Conversation(Occupation.Passenger,"The Rumanian and Austrian got completely drunk last night."),
-  Conversation(Occupation.Passenger,"I'd like to visit the blue chalet.  The owner is said to serve excellent lobster.") ]
+  Conversation(None,"I've heard they all have different color chalets\non a north-south ridge in the Tyrol region."),
+  Conversation(None,"The Austrian said he likes the look of natural wood\nand would never paint his chalet."),
+  Conversation(None,"They gave the waiter a difficult time.  The Turk\nordered beer and the other four all ordered different drinks."),
+  Conversation(None,"The Greek told me he hunts deer, but he never hunts\nwith any of the others because they all hunt different animals."),
+  Conversation(people[0],"My brother delivered a case of Kirsch to the green chalet.\nHe remembers it being just south of the gaudy red chalet."),
+  Conversation(None,"The Pole asked me--can you imagine that?--if I wanted to buy\nany howitzers."),
+  Conversation(people[1],"One of them asked me to cook some pheasant that he shot.  He\nsaid that I should come to the yellow chalet."),
+  Conversation(people[0],"One time my brother said he delivered a case of\nCognac to the middle chalet."),
+  Conversation(None,"The Rumanian said he had the shortest distance to drive\nfrom his chalet to the railroad station at Munich."),
+  Conversation(None,"One of them bragged that his military rifles were so\naccurate that he bagged a fox with one of them."),
+  Conversation(None,"The man who hunts wild boar said that the pistol dealer\nwho lives in the chalet next to his often gives loud parties."),
+  Conversation(None,"The pheasant hunter complained that the arms dealer in the\nchalet next to his makes far too much noise testing his mortars."),
+  Conversation(None,"The gin drinker bragged that he shot sixty wart hogs on\na single day last August."),
+  Conversation(None,"The Rumanian said he looks out on a blue chalet."),
+  Conversation(None,"The Cognac drinker bragged that he is the best hunter and\ncan drink more than all of the rest of them combined."),
+  Conversation(None,"The one carrying the pistol said he thinks the boar's head\nover his neighbor's doorway is revolting."),
+  Conversation(None,"One of them said that one day he'd like to lob a mortar\nshell at the string of pheasants drying in his neighbor's yard."),
+  Conversation(None,"The Kirsch drinker said he loved the roast chicken he had\nto eat last night."),
+  Conversation(None,"The one carrying the pistol had a second helping of pie."),
+  Conversation(None,"One commented that his beef dinner wasn't nearly as good\nas the boar that he shot last week."),
+  Conversation(None,"The Pole asked for more soup."),
+  Conversation(None,"The one eating all the cheese mumbled that it was the same\ncolor as his chalet."),
+  Conversation(None,"The Rumanian and Austrian got completely drunk last night."),
+  Conversation(None,"I'd like to visit the blue chalet.  The owner is said to\nserve excellent lobster.") ]
 
 
 # ######################################################################################
@@ -289,20 +292,19 @@ scenario = """
 
 def run_hazards(gs: GameState) -> None:
     """On some days we have snow or bandits...and any day we could derail"""
-    if gs.segment.ht != HazardType.No:
-        [snow,bandits][gs.segment.ht.value](gs)
+    if callable(gs.segment.ht): gs.segment.ht(gs)
     derail(gs)
 
 def ring_doorbell() -> None:
-    for _ in range(random.randrange(1,3)):
-        print(centered("*  * BRRRINNNG! *  *"))
+    print(centered("*  * BRRRINNNG! *  *"))
+    print()
+    time.sleep(1.0) 
+    if random.randrange(0,5) == 0:
+        print(centered("*  * Knock knock knock! *  *"))
         print()
         time.sleep(1.0) 
-    if random.randrange(0,2) == 1:
-        print(centered("*  * KNOCK! *  *"))
-        print()
-        time.sleep(1.0) 
-    pause('Press <return> to open the door...')
+    print('You open the door:')
+    # pause('Press <return> to open the door...')
     print()
 
 def run_meals(gs: GameState) -> None:
@@ -311,16 +313,18 @@ def run_meals(gs: GameState) -> None:
     elif gs.segment.tf == TimeFrame.Dinner:  serve_dinner()
        
 def run_convo(gs: GameState) -> None:
+    if gs.segment.nconv == 0: return
+    cls(2)
+    print("Later, in your compartment: ")
     for i in range(gs.segment.nconv):
         cls(2)
         convo = gs.conversations.pop()
         ring_doorbell()
-        if convo.who == Occupation.Passenger:
-            person = people[random.randrange(2,25)]
-        else:
-            person = people[convo.who.value]
+        person = convo.who or people[random.randrange(2,25)]
         print(f'Standing there is {person}, who tells you:')
-        print(convo.msg)   # TODO: word-wrap message
+        print(convo.msg)  
+        cls(2)
+        pause('Press <return> when finished with the conversation...')
 
 def intro() -> None:
     cls()
@@ -329,16 +333,85 @@ def intro() -> None:
     print(scenario)
     pause("Press <return> to call a taxi...") 
 
+def fmt_time(t):
+    t += 10000 
+    if (t % 100) > 59: t+= 40
+    t = str(t) 
+    return t[1:3] + ':' + t[3:]
+
+def announce_arrival(seg):
+    minutes_late = 18 - random.randrange(0,27)
+    ta = seg.tarrive + minutes_late
+    print(f'You have arrived at {seg.city} at {fmt_time(ta)}, ', end='')
+    if minutes_late > 0:  print(f'just {minutes_late} mintues late.')
+    elif minutes_late < 0: print(f'almost {-minutes_late} minutes early.')
+    else: print('right on time!')
+    return ta
+
+def first_departure() -> None:
+    print("The taxi has dropped you at Victoria Station in London.")
+    print("The Orient Express is standing majestically on Track 14.")
+    print('All aboard....')
+    time.sleep(1.0)
+    pause('Press <return> to board the train...')
+    print('The train is leaving.')
+    time.sleep(1.0)
+    who = random.randrange(3,23)
+    who = people[who:who+3] 
+    print()
+    print(f'"You speak to some of the passengers--{who[0]},')
+    print(f'{who[1]}, {who[2]} and others--and ask them to keep')
+    print('their eyes and ears open and to pass any information--no')
+    print('matter how trivial--to you in compartment 13.  The Channel')
+    print('crossing is pleasant and the first part of the trip uneventful.')
+    cls(4)
+    pause()
+
+def arrive_depart(j, seg):
+    ta = announce_arrival(seg)
+    td = seg.tdepart
+    if ta > (td - 2):  td = ta + 4  # ensure depart after arrival
+    
+    if seg.tf == TimeFrame.Night:
+        print("Asleep in your compartment, you barely notice that the")
+        print(f"departure was right on time at {fmt_time(td)}.")
+        cls(2)
+        pause()
+        return
+       
+    if j == 23:
+        pass # TODO: identify killer gosub 1340
+  
+    print(f'Departure is at {fmt_time(td)}.')
+    print()
+    if said_y('Would you like to get off the train and stretch your legs? '):
+        print('Ok, but be sure not to miss the train.') 
+        time.sleep(1.0)
+    else:
+        print('Ok, you stay in your compartment.') 
+    print()
+    print('All aboard....')
+    time.sleep(1.0)
+    print('The train is leaving.')
+
 def run_game() -> None:
     random.seed()
     gs = GameState()
     intro()
-    for j,seg in zip(range(1,25),segments):
+    for j,seg in enumerate(segments,1):
         gs.segment = seg 
         cls(4)
-        print(centered(f'~ February {j + 13 + gs.hazard_delay} 1923 ~'))
-        print(centered(f'~ {gs.segment.city}, {gs.segment.country} ~'))
+        print(centered(f'~ February {seg.day + 13 + gs.hazard_delay} 1923 ~'))
+        print(centered(f'~ {seg.city}, {seg.country} ~'))
         print()
+
+        if j == 1: 
+            first_departure()
+        else:
+            arrive_depart(j,seg)
+
+        # TODO: train noises??
+        # TODO: Identify killer? gosub 1490
         run_meals(gs)
         run_convo(gs)
         run_hazards(gs)
