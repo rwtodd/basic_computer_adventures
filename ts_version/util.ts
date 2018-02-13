@@ -1,4 +1,5 @@
 namespace AdventureUtils {
+    /** UI support for the kind of text adventures presented in the book. */
     export class UI {
         private container : HTMLDivElement
         private curDiv : HTMLDivElement
