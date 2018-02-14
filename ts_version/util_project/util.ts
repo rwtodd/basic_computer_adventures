@@ -1,4 +1,11 @@
 namespace AdventureUtils {
+    export function plural(n: number, base:string, sing='', pl='s'): string {
+        if(n == 1) {
+            return `1 ${base}${sing}`
+        } 
+        return `${n} ${base}${pl}`
+    }
+
     /** UI support for the kind of text adventures presented in the book. */
     export class UI {
         private container : HTMLDivElement
