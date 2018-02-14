@@ -1,9 +1,11 @@
 <html>
 <head>
     <script type="text/javascript" src="js/bca.js"></script>
+    <script type="text/javascript" src="js/neptune.js"></script>
     <style>
         body {
             background: #dddddd;
+            font-family: Arial, Helvetica, sans-serif;
         }
         #story {
             max-width: 6in;
@@ -15,27 +17,21 @@
             background: #ffffff;
             margin-top: 2em;
             padding: 1em 1em 1em 1em;
-            border: 1px solid black;
+            border: 1px solid #666;
+        }
+
+        div.adventure-text > p.centered {
+            text-align: center;
         }
     </style>
     <script>
-        async function do_game(ui) {
-            for(let i = 0 ; i < 20; i++) {
-                ui.section('Part ' + (i+1))    
-                ui.text('This is the first message')
-                await ui.pause()
-                ui.text('This is the second message')
-                await ui.pause()
-            }
-        }
-
-        window.onload = function() {
+        window.onload = async function() {
             const content = document.getElementById("story")
-            var ui = new AdventureUtils.UI(content)
-            do_game(ui)
+            const ui = new AdventureUtils.UI(content)
+            await Neptune.main(ui)
         }
     </script>
-    <title>Example Adventure</title>
+    <title>Voyage to Neptune</title>
 </head>
 <body>
 <div id='story'>

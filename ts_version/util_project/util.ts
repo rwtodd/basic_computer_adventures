@@ -9,7 +9,12 @@ namespace AdventureUtils {
             this.curDiv = undefined
         }
 
-        section(heading='') {
+        clearScreen(): void {
+            this.curDiv = undefined
+            this.container.innerHTML = ''
+        }
+
+        section(heading=''): void {
             this.curDiv = this.container.appendChild(document.createElement('div'))
             this.curDiv.className="adventure-text"
 
@@ -19,19 +24,36 @@ namespace AdventureUtils {
             }
         }
 
-        text(msg: string) {
+        print(msg: string): void {
             const para = this.curDiv.appendChild(document.createElement('p'))
-            para.innerText = msg
+            para.innerHTML = msg
+        }
+        
+        /** set an attribute on the last child in the current div */
+        setAttribute(attr:string, val: string) : void {
+            this.curDiv.lastElementChild.setAttribute(attr,val)            
         }
 
-        pause(msg="Press to continue...") { 
+        printClass(cls: string, msg: string) : void {
+            this.print(msg)
+            this.setAttribute('class', cls)
+        }
+
+        appendNode(n: Node): void {
+            this.curDiv.appendChild(n)
+        }
+
+        sleep(seconds: number): Promise<{}> {
+            window.scrollTo(0, document.body.scrollHeight);            
+            return new Promise(resolve => setTimeout(resolve,seconds*1000))
+        }
+
+        pause(msg="Press to continue..."): Promise<{}> { 
             const ip = this.curDiv.appendChild(document.createElement('button'))
             ip.innerHTML = msg
             window.scrollTo(0, document.body.scrollHeight);            
-            return new Promise(
-                function(resolve, reject ) {
+            return new Promise(resolve => 
                     ip.addEventListener('click', () => { ip.disabled = true; resolve() })
-                }
             )
         }
     }
