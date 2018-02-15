@@ -113,8 +113,50 @@ namespace Neptune {
         }
     }
 
-    function tradingInterface(ui: AUI, gs: GameState) {
-        return ui.pause(`Here's where the trading interface will be`)
+    async function tradingInterface(ui: AUI, gs: GameState) {
+        const trade = Math.floor(150 + 80*Math.random())
+        const prefix = (gs.seg.stage == 1)?"Before leaving, you can trade fuel for breeder reactor cells at" :
+                                            `Here at ${gs.seg.place}, breeder cells and nuclear fuel trade at`
+        ui.print(`${prefix} the rate of ${trade} pounds of fuel per cell.`)
+        ui.print('Adjust your breeder cell count to buy or sell:')
+
+        const slider_div = document.createElement('div')
+        slider_div.setAttribute('class','tradefuel')
+        const label_cs = document.createElement('label')
+        const cell_slider = document.createElement('input')
+        const cell_out = document.createElement('output')
+        const csname = `${gs.seg.stage}tradeslider`
+        cell_slider.setAttribute('id', csname)
+        label_cs.setAttribute('for',csname)
+        label_cs.innerText = "Breeder Cells: "
+        cell_out.setAttribute('for',csname)
+
+        const cellsmax = Math.floor(Math.max((gs.futot - 1500)/trade, 0) + gs.breed)
+        cell_slider.setAttribute('type','range')
+        cell_slider.setAttribute('min','50')
+        cell_slider.setAttribute('max', cellsmax.toString())
+        cell_slider.setAttribute('step','1')
+        cell_slider.setAttribute('value',gs.breed.toString())
+
+        const updater = function(x: number) {
+            const delta = x - gs.breed
+            const y = gs.futot - trade*delta 
+            cell_out.value = `${x} cells / ${y} lbs fuel`
+        }
+
+        updater(gs.breed)
+        cell_slider.addEventListener('input', _ => updater(cell_slider.valueAsNumber))
+
+        slider_div.appendChild(label_cs)
+        slider_div.appendChild(cell_slider)
+        slider_div.appendChild(cell_out)
+        ui.appendNode(slider_div)
+        await ui.pause('Done trading!')
+        cell_slider.disabled = true
+
+        const delta = cell_slider.valueAsNumber - gs.breed
+        gs.breed += delta
+        gs.futot -= delta*trade
     }
 
     async function enginePower(ui: AUI, gs: GameState) {
