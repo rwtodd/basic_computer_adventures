@@ -117,10 +117,70 @@ namespace Neptune {
         return ui.pause(`Here's where the trading interface will be`)
     }
 
-    function enginePower(ui: AUI, gs: GameState) {
-        gs.fuseg = Math.max(0, gs.futot - 1000)
-        gs.ubreed = Math.max(0, gs.breed - 20)
-        return ui.pause(`Here's where the engine power questions will be`)
+    async function enginePower(ui: AUI, gs: GameState) {
+        ui.print(`At this distance from the sun, your solar collectors can fulfill
+        ${56-(gs.seg.stage)*8}% of the fuel requirements of the engines.  How many pounds
+        of nuclear fuel do you want to use on this segment, and how many reactor cells 
+        do you want to operate?`)
+
+        const slider_div = document.createElement('div')
+        slider_div.setAttribute('class','pickfuel')
+        const label_fs = document.createElement('label')
+        const label_cs = document.createElement('label')
+        const fuel_slider = document.createElement('input')
+        const cell_slider = document.createElement('input')
+        const fuel_out = document.createElement('output')
+        const cell_out = document.createElement('output')
+        const fsname = `${gs.seg.stage}fslider`
+        const csname = `${gs.seg.stage}cslider`
+        fuel_slider.setAttribute('id', fsname)
+        cell_slider.setAttribute('id', csname)
+        label_fs.setAttribute('for',fsname)
+        label_fs.innerText = "Fuel: "
+        label_cs.setAttribute('for',csname)
+        label_cs.innerText = "Breeder Cells: "
+        fuel_out.setAttribute('for',fsname)
+        cell_out.setAttribute('for',csname)
+
+        fuel_slider.setAttribute('type','range')
+        fuel_slider.setAttribute('min','0')
+        fuel_slider.setAttribute('max',gs.futot.toString())
+        fuel_slider.setAttribute('step','1')
+        fuel_slider.setAttribute('value','0')
+ 
+        cell_slider.setAttribute('type','range')
+        cell_slider.setAttribute('min','0')
+        cell_slider.setAttribute('step','1')
+        cell_slider.setAttribute('value','0')
+        
+        const cell_updater = function(fuel_val: number) {
+            const newmax = Math.min(gs.breed, Math.floor(fuel_val/20), Math.floor((gs.futot-fuel_val)/5))
+            cell_slider.setAttribute('max', newmax.toString())
+            if(cell_slider.valueAsNumber > newmax) {
+                cell_slider.setAttribute('value', newmax.toString())
+            }
+            fuel_out.value = `${fuel_val} Max: ${gs.futot}`
+            cell_out.value = `${cell_slider.valueAsNumber} Max: ${newmax}`
+        }
+        cell_updater(0) // set the initial max cells...
+        fuel_slider.addEventListener('input', _ => cell_updater(fuel_slider.valueAsNumber))
+        cell_slider.addEventListener('input', _ => cell_updater(fuel_slider.valueAsNumber))
+        slider_div.appendChild(label_fs)
+        slider_div.appendChild(fuel_slider)
+        slider_div.appendChild(fuel_out)
+        slider_div.appendChild(document.createElement('br'))
+        slider_div.appendChild(label_cs)
+        slider_div.appendChild(cell_slider)
+        slider_div.appendChild(cell_out)
+        ui.appendNode(slider_div)
+        await ui.pause('Done setting fuel!')
+        fuel_slider.disabled = true
+        cell_slider.disabled = true
+        
+        gs.fuseg = fuel_slider.valueAsNumber
+        gs.futot -= gs.fuseg
+        gs.ubreed = cell_slider.valueAsNumber
+        gs.futot -= 5*gs.ubreed
     }
 
     function doCalculations(gs: GameState): void {
