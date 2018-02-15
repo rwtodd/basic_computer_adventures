@@ -119,12 +119,6 @@ def engine_power(gs: GameState) -> None:
     lbs.ensure_lessthan(gs.futot + 1, "That's more fuel than you have.  Now then, how many pounds")
     gs.fuseg = lbs.run()
 
-def check(c: bool, carp: str) -> bool:
-    """complain with CARP if C is not True"""
-    if not c:
-        print(carp)
-    return c
-
 def breeder_usage(gs: GameState) -> None:
     bu = CheckedInput("How many breeder reactor cells do you want to operate? ", int)
     bu.ensure_nonneg()
