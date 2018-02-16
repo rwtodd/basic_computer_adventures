@@ -1,8 +1,11 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+<<<<<<< HEAD:ts_version/neptune.html
     <script type="text/javascript" src="js/bca.js"></script>
     <script type="text/javascript" src="js/neptune.js"></script>
+=======
+>>>>>>> c9e04e96554655ab1202dde4f10b38fcb4d54b19:web_version/neptune.html
     <style>
         body {
             background: #dddddd;
@@ -25,12 +28,15 @@
             text-align: center;
         }
     </style>
-    <script>
-        window.onload = async function() {
-            const content = document.getElementById("story")
-            const ui = new AdventureUtils.UI(content)
-            await Neptune.main(ui)
-        }
+    <script type="module">
+      import { UI } from './js/bca.js'
+      import { main } from './js/neptune.js'
+      async function neptune() {
+         const content = document.getElementById("story")
+         const ui = new UI(content)
+         await main(ui)
+      }
+      window.onload = neptune
     </script>
     <title>Voyage to Neptune</title>
 </head>
