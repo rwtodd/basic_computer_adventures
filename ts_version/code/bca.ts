@@ -56,12 +56,12 @@ export class UI {
         this.curDiv.appendChild(n)
     }
 
-    sleep(seconds: number): Promise<{}> {
+    sleep(seconds: number): Promise<void> {
         window.scrollTo(0, document.body.scrollHeight);
         return new Promise(resolve => setTimeout(resolve, seconds * 1000))
     }
 
-    pause(msg = "Press to continue..."): Promise<{}> {
+    pause(msg = "Press to continue..."): Promise<void> {
         const ip = this.curDiv.appendChild(document.createElement('button'))
         ip.innerHTML = msg
         window.scrollTo(0, document.body.scrollHeight);
