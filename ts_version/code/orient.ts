@@ -110,31 +110,35 @@ const people = ["R. Brundt (a waiter)", "C. D'Arcy (a chef)",
     "Clayton Pasha", "Arturo Toscanini", "Maharajah Behar", "Leon Wenger",
     "Sarah Bernhardt", "Arthur Vetter", "Isadora Duncan", "David K.E. Bruce"]
 
+class Conversation {
+    constructor(public who: string | null, public msg: string) {}
+}
+
 const conversations = [
-    { who: null, msg: "I've heard they all have different color chalets on a north-south ridge in the Tyrol region." },
-    { who: null, msg: "The Austrian said he likes the look of natural wood and would never paint his chalet." },
-    { who: null, msg: "They gave the waiter a difficult time.  The Turk ordered beer and the other four all ordered different drinks." },
-    { who: null, msg: "The Greek told me he hunts deer, but he never hunts with any of the others because they all hunt different animals." },
-    { who: people[0], msg: "My brother delivered a case of Kirsch to the green chalet. He remembers it being just south of the gaudy red chalet." },
-    { who: null, msg: "The Pole asked me--can you imagine that?--if I wanted to buy any howitzers." },
-    { who: people[1], msg: "One of them asked me to cook some pheasant that he shot.  He said that I should come to the yellow chalet." },
-    { who: people[0], msg: "One time my brother said he delivered a case of Cognac to the middle chalet." },
-    { who: null, msg: "The Rumanian said he had the shortest distance to drive from his chalet to the railroad station at Munich." },
-    { who: null, msg: "One of them bragged that his military rifles were so accurate that he bagged a fox with one of them." },
-    { who: null, msg: "The man who hunts wild boar said that the pistol dealer who lives in the chalet next to his often gives loud parties." },
-    { who: null, msg: "The pheasant hunter complained that the arms dealer in the chalet next to his makes far too much noise testing his mortars." },
-    { who: null, msg: "The gin drinker bragged that he shot sixty wart hogs on a single day last August." },
-    { who: null, msg: "The Rumanian said he looks out on a blue chalet." },
-    { who: null, msg: "The Cognac drinker bragged that he is the best hunter and can drink more than all of the rest of them combined." },
-    { who: null, msg: "The one carrying the pistol said he thinks the boar's head over his neighbor's doorway is revolting." },
-    { who: null, msg: "One of them said that one day he'd like to lob a mortar shell at the string of pheasants drying in his neighbor's yard." },
-    { who: null, msg: "The Kirsch drinker said he loved the roast chicken he had to eat last night." },
-    { who: null, msg: "The one carrying the pistol had a second helping of pie." },
-    { who: null, msg: "One commented that his beef dinner wasn't nearly as good as the boar that he shot last week." },
-    { who: null, msg: "The Pole asked for more soup." },
-    { who: null, msg: "The one eating all the cheese mumbled that it was the same color as his chalet." },
-    { who: null, msg: "The Rumanian and Austrian got completely drunk last night." },
-    { who: null, msg: "I'd like to visit the blue chalet.  The owner is said to serve excellent lobster." }
+    new Conversation(null, "I've heard they all have different color chalets on a north-south ridge in the Tyrol region."),
+    new Conversation(null, "The Austrian said he likes the look of natural wood and would never paint his chalet."),
+    new Conversation(null, "They gave the waiter a difficult time.  The Turk ordered beer and the other four all ordered different drinks."),
+    new Conversation(null, "The Greek told me he hunts deer, but he never hunts with any of the others because they all hunt different animals."),
+    new Conversation(people[0], "My brother delivered a case of Kirsch to the green chalet. He remembers it being just south of the gaudy red chalet."),
+    new Conversation(null, "The Pole asked me--can you imagine that?--if I wanted to buy any howitzers."),
+    new Conversation(people[1], "One of them asked me to cook some pheasant that he shot.  He said that I should come to the yellow chalet."),
+    new Conversation(people[0], "One time my brother said he delivered a case of Cognac to the middle chalet."),
+    new Conversation(null, "The Rumanian said he had the shortest distance to drive from his chalet to the railroad station at Munich."),
+    new Conversation(null, "One of them bragged that his military rifles were so accurate that he bagged a fox with one of them."),
+    new Conversation(null, "The man who hunts wild boar said that the pistol dealer who lives in the chalet next to his often gives loud parties."),
+    new Conversation(null, "The pheasant hunter complained that the arms dealer in the chalet next to his makes far too much noise testing his mortars."),
+    new Conversation(null, "The gin drinker bragged that he shot sixty wart hogs on a single day last August."),
+    new Conversation(null, "The Rumanian said he looks out on a blue chalet."),
+    new Conversation(null, "The Cognac drinker bragged that he is the best hunter and can drink more than all of the rest of them combined."),
+    new Conversation(null, "The one carrying the pistol said he thinks the boar's head over his neighbor's doorway is revolting."),
+    new Conversation(null, "One of them said that one day he'd like to lob a mortar shell at the string of pheasants drying in his neighbor's yard."),
+    new Conversation(null, "The Kirsch drinker said he loved the roast chicken he had to eat last night."),
+    new Conversation(null, "The one carrying the pistol had a second helping of pie."),
+    new Conversation(null, "One commented that his beef dinner wasn't nearly as good as the boar that he shot last week."),
+    new Conversation(null, "The Pole asked for more soup."),
+    new Conversation(null, "The one eating all the cheese mumbled that it was the same color as his chalet."),
+    new Conversation(null, "The Rumanian and Austrian got completely drunk last night."),
+    new Conversation(null, "I'd like to visit the blue chalet.  The owner is said to serve excellent lobster.")
 ]
 
 enum TimeFrame { Early, Breakfast, Lunch, Dinner, Night }
@@ -143,7 +147,7 @@ class Segment {
     constructor(
         public tf: TimeFrame,    
         public nconv: number,   // number of conversations
-        public ht: (ui: UI, gs: GameState) => Promise<void>,  // hazard type 
+        public ht: ((ui: UI, gs: GameState) => Promise<void>) | null,  // hazard type 
         public day: number,     // days into the journey
         public tarrive: number,  // arrival time
         public tdepart: number,  // departure time
@@ -179,13 +183,13 @@ const segments = [
     new Segment(TimeFrame.Early, 0, null, 4, 1230, 0, "Constantinople", "Turkey")]
 
 class GameState {
-    segment: Segment = null         // which segment of the trip are we on? 
+    segment: Segment = segments[0]         // which segment of the trip are we on? 
     derailed = false       // have we derailed yet?
     bandits = false       // have bandits attacked?
     hazard_delay = 0       // days delayed by hazards
-    convos: { who: string; msg: string }[] = bca.shuffle(conversations.slice())
-    my_defector: number = null     // player choice
-    my_killer: number = null       // player choice
+    convos: Conversation[] = bca.shuffle(conversations.slice())
+    my_defector = -1     // player choice
+    my_killer = -1       // player choice
     perfection = false     // did you get everything right?
     alive = true           // are we alive?
 }
@@ -307,7 +311,7 @@ async function run_convo(ui: UI, gs: GameState): Promise<void> {
     ui.section('Visitors')
     ui.print("Later, in your compartment...")
     for (let i = 0; i < gs.segment.nconv; i++) {
-        const c = gs.convos.pop()
+        const c  = gs.convos.pop() || { who: null, msg: "hmphrr... (incoherent rambling)" }
         await ring_doorbell(ui)
         const person = c.who || people[Math.floor(Math.random() * 23 + 2)]
         ui.print(`Standing there is ${person}, who tells you: ${c.msg}`)

@@ -19,12 +19,12 @@ export class UI {
     private curDiv: HTMLDivElement
 
     constructor(private container: HTMLDivElement) {
-        this.curDiv = null
+        this.curDiv = document.createElement('div')  // just a dummy placeholder
     }
 
     clearScreen(): void {
-        this.curDiv = null
         this.container.innerHTML = ''
+        this.curDiv = document.createElement('div') // just a dummy placeholder
     }
 
     section(heading = ''): void {
@@ -44,7 +44,8 @@ export class UI {
 
     /** set an attribute on the last child in the current div */
     setAttribute(attr: string, val: string): void {
-        this.curDiv.lastElementChild.setAttribute(attr, val)
+        const lec = this.curDiv.lastElementChild
+        if(lec) lec.setAttribute(attr, val)
     }
 
     printClass(cls: string, msg: string): void {
