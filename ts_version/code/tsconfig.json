@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "module": "es2015",
+        "target": "es2017",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "declaration": true,
+        "sourceMap": true,
+		"outDir": "../js"
+    },
+    "files": [
+        "bca.ts",
+        "neptune.ts"
+    ]
+}

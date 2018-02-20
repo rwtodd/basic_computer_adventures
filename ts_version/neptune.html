@@ -1,0 +1,43 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background: #dddddd;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #story {
+            max-width: 6in;
+            margin: auto;
+            font-size: 14pt;
+            background: #dddddd;
+        }
+        div.adventure-text {
+            background: #ffffff;
+            margin-top: 2em;
+            padding: 1em 1em 1em 1em;
+            border: 1px solid #666;
+        }
+
+        div.adventure-text > p.centered {
+            text-align: center;
+        }
+    </style>
+    <script type="module">
+      import { UI } from './js/bca.js'
+      import { main } from './js/neptune.js'
+      async function neptune() {
+         const content = document.getElementById("story")
+         const ui = new UI(content)
+         await main(ui)
+      }
+      window.onload = neptune
+    </script>
+    <title>Voyage to Neptune</title>
+</head>
+<body>
+<div id='story'>
+
+</div>
+</body>
+</html>
