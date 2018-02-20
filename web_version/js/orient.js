@@ -17,7 +17,7 @@ function defector() {
     let a3 = 0
     meals.forEach( (n,j) => { 
         if((j < 22) && (n & 1)) {
-            a3 += 5*(j+2)-pox
+            a3 += 5*(j+2)-posx
         } 
     })
     return a3
@@ -30,7 +30,7 @@ function defector() {
        so you can't see who it is by accident.
  */
 function killer() {
-    return parseInt(btoa('NA=='))
+    return parseInt(atob('NA=='))
 }
 
 
@@ -61,7 +61,7 @@ function do_menu(ui, title, items) {
     mlist.setAttribute('class', 'menulist')
     items.map( txt => {
         const n = document.createElement('li')
-        n.innerText = i
+        n.innerText = txt
         return n
     }).forEach(mlist.appendChild, mlist)
     ui.appendNode(mlist)
@@ -93,7 +93,7 @@ async function serve_dinner(ui) {
     await ui.pause()
     let menu = []
     for(let i = 0; i < 7; i++) {
-        menu.push(breakfasts[Math.floor(  3*(i+Math.random())  )])
+        menu.push(dinners[Math.floor(  3*(i+Math.random())  )])
     }
     menu.push(dinners[22], dinners[23], dinners[24])
     do_menu(ui, 'DINNER MENU', menu)
@@ -101,7 +101,7 @@ async function serve_dinner(ui) {
 }
 
 
-people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
+const people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
            "Herbert Hoover","Baron Rothschild","Guido Famadotta","Gustav Mahler",
            "Robert Baden-Powell","Fritz Kreisler","Dame Melba","Gerald Murphy",
            "Calouste Gulbenkian","Captain G.T. Ward","Sir Ernest Cassel",
@@ -109,15 +109,15 @@ people = [ "R. Brundt (a waiter)","C. D'Arcy (a chef)",
            "Clayton Pasha","Arturo Toscanini","Maharajah Behar","Leon Wenger",
            "Sarah Bernhardt","Arthur Vetter","Isadora Duncan","David K.E. Bruce" ]
 
-conversations = [
+const conversations = [
   { who: null, msg: "I've heard they all have different color chalets on a north-south ridge in the Tyrol region." },
   { who: null, msg: "The Austrian said he likes the look of natural wood and would never paint his chalet." },
   { who: null, msg: "They gave the waiter a difficult time.  The Turk ordered beer and the other four all ordered different drinks." },
   { who: null, msg: "The Greek told me he hunts deer, but he never hunts with any of the others because they all hunt different animals." },
   { who: people[0], msg: "My brother delivered a case of Kirsch to the green chalet. He remembers it being just south of the gaudy red chalet." },
-  { who: null, mag: "The Pole asked me--can you imagine that?--if I wanted to buy any howitzers." },
-  { who: people[1], mag: "One of them asked me to cook some pheasant that he shot.  He said that I should come to the yellow chalet." },
-  { who: people[0], mag: "One time my brother said he delivered a case of Cognac to the middle chalet." },
+  { who: null, msg: "The Pole asked me--can you imagine that?--if I wanted to buy any howitzers." },
+  { who: people[1], msg: "One of them asked me to cook some pheasant that he shot.  He said that I should come to the yellow chalet." },
+  { who: people[0], msg: "One time my brother said he delivered a case of Cognac to the middle chalet." },
   { who: null, msg: "The Rumanian said he had the shortest distance to drive from his chalet to the railroad station at Munich." },
   { who: null, msg: "One of them bragged that his military rifles were so accurate that he bagged a fox with one of them." },
   { who: null, msg: "The man who hunts wild boar said that the pistol dealer who lives in the chalet next to his often gives loud parties." },
@@ -198,7 +198,7 @@ async function snow(ui, gs) {
     if (x > 0.65) return   // 65% chance of snow
     ui.section('Snow!')
     const msgs = ["It is snowing heavily "]
-    if(x > 0.01) {
+    if(x > 0.02) {  // 2% chance of heavy snow
         ui.print(`It is snowing heavily but the tracks have been cleared and the train
         will not be delayed.`)
     } else { 
@@ -235,7 +235,7 @@ async function bandits(ui, gs) {
     ui.print(`You are rudely awakened from a deep sleep by a loud noise
     as the train jerks to a halt.`)
     await ui.sleep(1.0) 
-    await ring_doorbell()
+    await ring_doorbell(ui)
     ui.print(`You are shocked to see a bandit waving a gun in your face.
     He demands you give him your wallet, jewelry, and watch.`)
     await ui.sleep(1.0) 
@@ -294,11 +294,11 @@ async function intro(ui) {
 
 /** On some days we have snow or bandits...and any day we could derail  */
 async function run_hazards(ui, gs) {
-    if(gs.segment.ht) { await gs.segment.ht.call(null,ui,gs) }
+    if(gs.segment.ht) { await gs.segment.ht(ui,gs) }
     await derail(ui,gs)
 }
 
-async function run_meals(gs) {
+async function run_meals(ui,gs) {
     switch(gs.segment.tf) {
         case TimeFrame.Breakfast: await serve_breakfast(ui) ; break
         case TimeFrame.Lunch: await serve_lunch(ui) ; break
@@ -339,7 +339,7 @@ function announce_arrival(ui,seg) {
 }
 
 async function first_departure(ui) {
-    ui.section('Departure!')
+    // ui.section('Departure!')
     ui.print(`The taxi has dropped you at Victoria Station in London.
     The Orient Express is standing majestically on Track 14.
     All aboard....`)
@@ -347,8 +347,8 @@ async function first_departure(ui) {
     await ui.pause('Press here to board the train...')
     ui.print('The train is leaving.')
     await ui.sleep(1.0)
-    const idx = 3 + Math.random()*20
-    const who = people.slice(who,who+3) 
+    const idx = Math.floor(3 + Math.random()*20)
+    const who = people.slice(idx,idx+3) 
     ui.print(`You speak to some of the passengers--${who[0]},
     ${who[1]}, ${who[2]} and others--and ask them to keep
     their eyes and ears open and to pass any information--no
@@ -362,6 +362,32 @@ async function banner(ui, n, msg, msgClass = 'centered') {
         ui.printClass(msgClass, msg);
         await ui.sleep(1.0);
     }
+}
+
+async function turkish_police(ui, gs) {
+    const full_choices = ["Austrian", "Turk", "Pole", "Greek", "Rumanian"]
+
+    ui.section('Turkish Police!')
+
+    ui.print(`The Turkish police have boarded the train.  They have been
+    asked to assist you, but for them to do so you will have to
+    identify the killer (the dealer in machine guns) and the defector
+    (the Scotch drinker) to them.  The arms dealers are lined up.`)
+
+    const myd = await ui.choices("Who do you identify as the defector?", full_choices)
+    await ui.sleep(1.0)
+    const reduced_choices = full_choices.filter(c => c != myd)
+    const myk = await ui.choices("Now they want you to identify the killer...", reduced_choices)
+    await ui.sleep(1.5)
+    ui.print(`The police take into custody the man you identified as the
+    killer and provide a guard to ride on the train with the
+    defector.  You return to your compartment, praying that
+    you made the correct deductions and identified the right men.`)
+    await ui.pause()
+    ui.section('Later on...')
+
+    gs.my_defector = full_choices.findIndex(c => c == myd) + 1
+    gs.my_killer = full_choices.findIndex(c => c == myk) + 1
 }
 
 async function endgame(ui,gs) {
@@ -379,26 +405,100 @@ async function endgame(ui,gs) {
     await ui.pause()
 }
 
-// TODO: arrive_depart,  police, determine_outcome
+async function arrive_depart(ui, j, gs) {
+    const seg = gs.segment
+    const ta = announce_arrival(ui, seg)
+    let td = seg.tdepart
+    if (ta > (td - 2))  td = ta + 4  // ensure depart after arrival
+    
+    if (j === 23) return  // end of game...
+
+    if(seg.tf == TimeFrame.Night) {
+        ui.print(`Asleep in your compartment, you barely notice that the
+        departure was right on time at ${fmt_time(td)}.`)
+        await ui.pause()
+        return
+    }
+
+    if(j === 22) await turkish_police(ui,gs)
+  
+    ui.print(`Departure is at ${fmt_time(td)}.`)
+    const get_off = await ui.choices("Would you like to get off the train and stretch your legs?", ["Yes","No"]) 
+    if (get_off == 'Yes') {
+        ui.print('Ok, but be sure not to miss the train.') 
+    } else {
+        ui.print('Ok, you stay in your compartment.') 
+    }
+    await ui.sleep(1.0)
+    ui.print('All aboard....')
+    await ui.sleep(0.5)
+    ui.print('The train is leaving.')
+}
+
+async function determine_outcome(ui,gs) {
+    const [d, k] = [defector(), killer()]
+
+    // Did you get everything right?
+    if(gs.my_defector == d && gs.my_killer == k) {
+        gs.perfection = true
+        return
+    }
+    
+    // The defector is killed by bandits if you didn't either
+    // protect him or arrest him
+    if(d != gs.my_defector && d != gs.my_killer) {
+        ui.print(`You are suddenly awakened by what sounded like a gunshot.
+        You rush to the defector's compartment, but he is okay.
+        However, one of the other arms dealers has been shot.`)
+        await ui.sleep(2.0)
+        ui.print(`You review the details of the case in your mind and realize
+        that you came to the wrong conclusion and due to your mistake
+        a man lies dead at the hand of bandits.  You return to your
+        compartment and are consoled by the thought that you correctly
+        identified the killer and that he will hang for his crimes.`)
+        
+        ui.print("At least, you hope that's true...")
+        await ui.pause()
+    }
+
+    // if you didn't identify the killer, he kills you!
+    if(k != gs.my_killer) {
+        await ring_doorbell(ui)
+        ui.print(`A man is standing outside.  He says, 'You made a
+        mistake.  A bad one.  You see, I am the machine gun dealer.'`)
+        if(gs.my_killer == d) {
+            ui.print(`'Moreover,' he says, 'you identified the man who was cooperating
+            with you as the killer.  So the state will take care of him.  Ha.'`)
+        }
+        await ui.sleep(2.0)
+        ui.print("He draws a gun.  BANG.  You are dead.")
+        ui.print(`You never know that the train arrived at 12:30, right on
+        time at Constantinople, Turkey.`)
+        gs.alive = false
+        await ui.pause()
+    }
+}
+
 
 async function run_game(ui) {
     const gs = new GameState()
     await intro(ui)
     for(let j = 0 ; j < segments.length; ++j) {
-        gs.segment = segments[j] 
+        gs.segment = segments[j]
+        const seg = gs.segment 
         ui.section(`${seg.city}`)
         ui.printClass('centered',`~ February ${seg.day + 13 + gs.hazard_delay} 1923 ~`)
         ui.printClass('centered',`~ ${seg.city}, ${seg.country} ~`)
 
         if(j === 0) { 
-            first_departure()
+            await first_departure(ui)
         } else if(j < 23) {
-            arrive_depart(j,gs)
+            await arrive_depart(ui,j,gs)
         } else {
             if(gs.alive) {
                  announce_arrival(ui,seg)
             }
-            await endgame(gs)
+            await endgame(ui,gs)
             return
         }
 

@@ -25,15 +25,15 @@
     </style>
     <script type="module">
       import { UI } from './js/bca.js'
-      import { main } from './js/neptune.js'
-      async function neptune() {
+      import { main } from './js/orient.js'
+      async function orient() {
          const content = document.getElementById("story")
          const ui = new UI(content)
          await main(ui)
       }
-      window.onload = neptune
+      window.onload = orient
     </script>
-    <title>Voyage to Neptune</title>
+    <title>Orient Express</title>
 </head>
 <body>
 <div id='story'>
