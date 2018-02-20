@@ -9,6 +9,14 @@ export function plural(n, base, sing = '', pl = 's') {
     return `${n} ${base}${pl}`;
 }
 
+/** randomly shuffle an array in-place */
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 /** UI support for the kind of text adventures presented in the book. */
 export class UI {
     constructor(container) {
