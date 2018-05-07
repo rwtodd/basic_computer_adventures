@@ -25,7 +25,7 @@ def defector() -> int:
 
 def killer() -> int:
     """i can't retrace the program for the killer, because it relies
-       gw-basic's ON ERROR GOTO mechanism for OUT OF DATA (err 4), 
+       gw-basic's ON ERROR GOTO mechanism for OUT OF DATA, 
        which is brilliant.  I'll just hide it behind base64 for now,
        so you can't see who it is by accident."""
     from base64 import b64decode
