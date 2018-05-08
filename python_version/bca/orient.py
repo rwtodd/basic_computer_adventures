@@ -194,7 +194,12 @@ def derail(gs: GameState) -> None:
 # ######################################################################################
 # Trip Data (segments, conversations, etc.)
 
-TimeFrame = Enum("TimeFrame", "Early Breakfast Lunch Dinner Night", start=0)
+class TimeFrame(Enum):  # mypy doesn't like the functional form, so write out the class
+  Early = 0,
+  Breakfast = 1, 
+  Lunch = 2,
+  Dinner = 3,
+  Night = 4
 
 Segment = namedtuple("Segment", "tf nconv ht day tarrive tdepart city country")
 segments = [Segment(TimeFrame.Early,    0,None   ,1,   0,1430,"London","England"),
@@ -359,8 +364,8 @@ def first_departure() -> None:
     pause('Press <return> to board the train...')
     print('The train is leaving.')
     time.sleep(1.0)
-    who = random.randrange(3,23)
-    who = people[who:who+3] 
+    whoIdx = random.randrange(3,23)
+    who = people[whoIdx:whoIdx+3] 
     print()
     print(f'"You speak to some of the passengers--{who[0]},')
     print(f'{who[1]}, {who[2]} and others--and ask them to keep')

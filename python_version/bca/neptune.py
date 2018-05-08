@@ -93,9 +93,9 @@ def trade_fuel(gs: GameState) -> None:
         ncells.ensure_nonneg()
         ncells.ensure(lambda c: (gs.futot - c*trade) > 1500,
                       "That doesn't leave enough fuel to run the engines.")
-        ncells = ncells.run()
-        gs.futot -= ncells*trade
-        gs.breed += ncells
+        n = ncells.run() 
+        gs.futot -= n*trade
+        gs.breed += n
         return
     
     enough_cells = (gs.breed > 50)
@@ -106,9 +106,9 @@ def trade_fuel(gs: GameState) -> None:
         ncells.ensure_lessthan(gs.breed, "That's more cells than you have!")
         ncells.ensure_lessthan(gs.breed - 50,
                                lambda c: f'That would leave only {gs.breed - c} cells. The reactor requires a minimum\n    of 50 cells to remain operational.')
-        ncells = ncells.run()
-        gs.breed -= ncells
-        gs.futot += ncells*trade
+        n = ncells.run()
+        gs.breed -= n
+        gs.futot += n*trade
 
 def engine_power(gs: GameState) -> None:
     print()
