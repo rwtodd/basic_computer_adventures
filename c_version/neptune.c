@@ -5,11 +5,14 @@
 #include<string.h>
 #include<ncurses.h>
 
-#define stringify1(x) #x
-#define stringify(x) stringify1(x)
 #define GM_WID 67
 #define GM_HGT 23
 
+#define stringify1(x) #x
+#define stringify(x) stringify1(x)
+#define percentage ((rand() % 100)/100.0)
+
+static char buffer[GM_WID+1]; /* oh no, it's not ... thread safe! LOL */
 static const char spc[] = " ";          /* just define it once here */
 static int voffs = 0, hoffs = 0;        /* center the game 'window' */
 static int game_cur_line = 0;           /* current last line in game buffer */
@@ -23,12 +26,25 @@ kill_program (const char *msg)
   exit (-1);
 }
 
-/* TODO fill this out better */
+/* format the duration in days into a static buffer and
+ * return it to the caller.  Yeah, it's not thread safe,
+ * maybe I should re-write it in Rust(TM) LOL
+ */
 static char *
-format_days(double days)
+format_days(int days)
 {
    static char fdbuff[50];
-   snprintf(fdbuff,50,"%d days", (int)days);
+   int years = days / 365, jday = days % 365;
+   float months = jday / 30.5;
+   if(years > 0)
+   {
+      snprintf(fdbuff, 50, "%d year%s %0.2f months",
+        years, 
+	years == 1 ? "," : "s,", 
+	months);
+   } else {
+      snprintf(fdbuff, 50, "%f months", months);
+   }
    return fdbuff;
 }
 
@@ -92,7 +108,6 @@ clear_game_tobot (int line)
 static void
 write_desc (const char *const msg, ...)
 {
-  static char buffer[GM_WID+1]; /* oh no, it's not ... thread safe! LOL */
   va_list args;
   va_start(args,msg);
   vsnprintf(buffer, sizeof(buffer), msg, args);
@@ -102,10 +117,38 @@ write_desc (const char *const msg, ...)
 }
 
 static void
+write_prompt (const char *const msg, ...)
+{
+  va_list args;
+  va_start(args,msg);
+  vsnprintf(buffer, sizeof(buffer), msg, args);
+  va_end(args);
+  attrset (PROMPT_COLOR);
+  /* a little wasteful writing over the line twice, but easier */
+  mvprintw (voffs + game_cur_line, hoffs, "%" stringify (GM_WID) "s", spc);
+  mvprintw (voffs + game_cur_line++, hoffs, "%s", buffer);
+  attrset (USER_COLOR);
+}
+
+static void
 write_instructions (const char *const msg)
 {
   attrset (PROMPT_COLOR);
   mvprintw (voffs + GM_HGT - 1, hoffs, "%" stringify (GM_WID) "s", msg);
+}
+
+/* several times in the game you have to press a key to
+ * continue... we'll get to that now
+ */
+static void
+press_any_key(int clear_level)
+{
+  write_instructions("Press any key... ");
+  move(voffs + GM_HGT - 1, hoffs + GM_WID - 1);
+  refresh();
+  getch();
+  if(clear_level > 0) clear_game_tobot(clear_level);
+  else write_instructions(" ");
 }
 
 static void
@@ -145,9 +188,7 @@ do_intro (void)
   for(lnum = 0; lnum < sizeof(intro_p ## n)/sizeof(const char *); ++lnum) \
     write_desc(intro_p ## n[lnum]);  \
   while(lnum++ < 10) write_desc(" "); \
-  write_instructions("Press any key..."); \
-  refresh(); \
-  getch()
+  press_any_key(-1)
 
   do_para (1);
   do_para (2);
@@ -187,17 +228,17 @@ static struct gm_segment {
 };
 
 static struct gm_state {
-        double totime;    /* total cumulative time  */
-        double breed;     /* breeder-reactor cells */
-        double futot;     /* fuel cells */
-
-        double fuseg;   /* amount of fuel to use this segment */
         double rate;    /* rate of speed (last seg) */
-        double time;    /* time spent (last seg) */
-        double ubreed;  /* used breeder cells (last seg) */
-        double fubr;    /* fuel used per breeder cell (last seg) */
-        double fudcy;   /* how much fuel decays (last seg) */
+        int totime;    /* total cumulative time  */
+        int breed;     /* breeder-reactor cells */
+        int futot;     /* fuel cells */
 
+        int time;    /* time spent (last seg) */
+        int ubreed;  /* used breeder cells (last seg) */
+        int fubr;    /* fuel used per breeder cell (last seg) */
+        int fudcy;   /* how much fuel decays (last seg) */
+
+        int fuseg;      /* amount of fuel to use this segment */
         int seg;        /* segment of the trip */
         int distance;   /* distance travelled */
 } game = {
@@ -235,6 +276,87 @@ print_conditions(void)
     fuel_report();
 }
 
+static void
+engine_power(void)
+{
+   write_desc("At this distance from the sun, your solar collectors can fulfill");
+   write_desc("%d%% of the fuel requirements of the engines.  How many pounds", 
+     56 - (game.seg+1)*8);
+  write_desc("of nuclear fuel do you want to use on this segment?");
+
+   int restart_level = game_cur_line; 
+   int lbs = -1;  /* should be from 0 to game.futot */
+
+   while(1)
+     {
+       game_cur_line = restart_level;
+       write_prompt("Enter a number from 0 to %d: ", game.futot);
+       scanw("%d", &lbs); 
+       if(lbs >= 0 && lbs <= game.futot) break;
+       write_instructions("Try again...");
+     }
+    write_instructions("");
+    game.fuseg = lbs;
+}
+
+static void
+breeder_usage(void)
+{
+    int operable = game.fuseg/20;
+    int seedable = game.futot/5;
+    int max_cells = game.breed > operable ? operable : game.breed;
+    if(max_cells > seedable) max_cells = seedable;
+    write_desc("How many breeder reactor cells do you want to operate?");
+    int restart_level = game_cur_line; 
+    int bu = -1; /* should be from 0 to min( game.breed, game.fuseg/20, futot/5 ) */
+    /* if > breed  "You don't have that many cells." */
+    /* if > fuseg/20 The spent fuel from your engines is only enough to operate {int(game.fuseg/20)}\n    breeder reactor cells.  Again please...') */
+    /* if > futot/5  'You have only enough fuel to seed {int(game.futot/5)} breeder cells.\n    Please adust your number accordingly.') */
+   while(1)
+     {
+       game_cur_line = restart_level;
+       write_prompt("Enter a number from 0 to %d: ", max_cells);
+       scanw("%d", &bu); 
+       if(bu >= 0 && bu <= max_cells) break;
+       write_instructions("Try again...");
+     }
+    write_instructions("");
+    game.ubreed = bu;
+}
+
+static void
+engine_malfunction(double reduction)
+{
+   write_desc("Engine malfunction (%f) !!!",reduction);
+   /* TODO! */
+}
+
+/* calculate what happens next, after user input
+ */
+static void
+calculate_results(void)
+{
+    /* eff is the engine efficiency */
+    double eff = 54 - (game.seg+1)*8+game.fuseg/40;
+    if(eff > 104) eff = 104; 
+    double engine_fail = percentage; 
+    if(engine_fail < 0.1)              /* 10% chance of engine problem */
+    {
+        double reduction = 3*engine_fail;
+        engine_malfunction(reduction);
+        eff *= (1-reduction);
+    }
+    game.rate = eff * 513.89;              /* mph */
+    game.distance += trip[game.seg].distance;  /* millions of miles */
+    game.time = (int)(trip[game.seg].distance * 41667 / game.rate);  /* days */
+    game.totime += game.time;                  /* total trip time */
+    game.fubr = (int)(16+18*percentage);
+    game.futot += game.fubr*game.ubreed;     /* new fuel from breeder */
+    double fuel_decay = percentage;
+    game.fudcy = fuel_decay < 0.2 ? (int)(fuel_decay*game.futot) : 0;
+    game.futot -= game.fudcy;
+}
+
 /* play one game round */
 static void
 one_segment(void)
@@ -242,18 +364,18 @@ one_segment(void)
     clear_game_tobot (0);
     print_conditions();  
     /* trade_fuel() */
-
+    press_any_key(2);
     write_desc("After trading:");
     fuel_report();
-    /* engine_power(gs) */
+    engine_power();
     game.futot -= game.fuseg;
-    /* breeder_usage(gs); */
+    breeder_usage();
     game.futot -= 5*game.ubreed;
-    /* calculate_results(gs) */
+    calculate_results();
     ++game.seg;
     /* cls(8); */
     /* timed_banner(3, '* * Travelling * *', 0.5) */
-    getch();
+    /* getch(); */
 }
 
 int
@@ -286,7 +408,7 @@ main (int argc, char *argv[])
     one_segment();
 
   /* game over... */
-  getch();
+  press_any_key(-1);
   erase ();
   endwin ();
 
