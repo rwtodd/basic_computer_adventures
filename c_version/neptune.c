@@ -1,3 +1,4 @@
+#include<stdarg.h>
 #include<time.h>
 #include<stdlib.h>
 #include<stdio.h>
@@ -9,8 +10,9 @@
 #define GM_WID 67
 #define GM_HGT 23
 
-static const char spc[] = " ";  /* just define it once here */
+static const char spc[] = " ";          /* just define it once here */
 static int voffs = 0, hoffs = 0;        /* center the game 'window' */
+static int game_cur_line = 0;           /* current last line in game buffer */
 
 static void
 kill_program (const char *msg)
@@ -19,6 +21,15 @@ kill_program (const char *msg)
   fputs (msg, stderr);
   putc ('\n', stderr);
   exit (-1);
+}
+
+/* TODO fill this out better */
+static char *
+format_days(double days)
+{
+   static char fdbuff[50];
+   snprintf(fdbuff,50,"%d days", (int)days);
+   return fdbuff;
 }
 
 #define HEADING_COLOR COLOR_PAIR(1)|A_BOLD
@@ -62,10 +73,9 @@ static void
 write_heading (int line, const char *const msg)
 {
   size_t mslen = strlen (msg) + 10;
-  size_t spacing = (GM_WID - mslen + 1) / 2;
+  int spacing = (GM_WID - mslen + 1) / 2;
   char fmtstring[23]; /* "%999s~~([ %s ])~~%999s" */
-  sprintf (fmtstring, "%%%lds~~([ %%s ])~~%%%lds", spacing,
-           (GM_WID - spacing - mslen));
+  sprintf (fmtstring, "%%%ds~~([ %%s ])~~%%%ds", spacing, (int)(GM_WID - spacing - mslen));
   attrset (HEADING_COLOR);
   mvprintw (voffs + line, hoffs, fmtstring, spc, msg, spc);
 }
@@ -74,15 +84,21 @@ write_heading (int line, const char *const msg)
 static void
 clear_game_tobot (int line)
 {
+  game_cur_line = line >= 2 ? line : 2;
   while (line < GM_HGT)
     mvprintw (voffs + line++, hoffs, "%" stringify (GM_WID) "s", spc);
 }
 
 static void
-write_desc (int line, const char *const msg)
+write_desc (const char *const msg, ...)
 {
+  static char buffer[GM_WID+1]; /* oh no, it's not ... thread safe! LOL */
+  va_list args;
+  va_start(args,msg);
+  vsnprintf(buffer, sizeof(buffer), msg, args);
+  va_end(args);
   attrset (DESC_COLOR);
-  mvprintw (voffs + 2 + line, hoffs, "%-" stringify (GM_WID) "s", msg);
+  mvprintw (voffs + game_cur_line++, hoffs, "%-" stringify (GM_WID) "s", buffer);
 }
 
 static void
@@ -125,9 +141,10 @@ do_intro (void)
   write_heading (0, "S P A C E   V O Y A G E   TO   N E P T U N E");
   int lnum;
 #define do_para(n) \
+  game_cur_line = 2; \
   for(lnum = 0; lnum < sizeof(intro_p ## n)/sizeof(const char *); ++lnum) \
-    write_desc(lnum, intro_p ## n[lnum]);  \
-  while(lnum < 10) write_desc(lnum++, " "); \
+    write_desc(intro_p ## n[lnum]);  \
+  while(lnum++ < 10) write_desc(" "); \
   write_instructions("Press any key..."); \
   refresh(); \
   getch()
@@ -151,9 +168,92 @@ make_starfield (int cols, int rows)
       int x = rand () % cols, y = rand () % rows;
       char c = stars[rand () % 3];
       attrset (COLOR_PAIR (STAR_COLOR1 + (rand () % 3)) | A_BOLD);
-      if (x != hoffs - 1 && x != cols - hoffs)
+      if (x != hoffs - 1 && x != cols - hoffs + 1)
         mvaddch (y, x, c);
     }
+}
+
+/* **********************************************************************
+ * G A M E   L O G I C
+ * **********************************************************************
+ */
+static struct gm_segment {
+   const char *location;
+   int distance;
+} trip[] = {
+         {"Earth", 391}, {"Callisto", 403}, {"Titan", 446},
+         {"Alpha 1", 447}, {"Ariel", 507}, {"Theta 2", 507},
+         {"Neptune", 0}  
+};
+
+static struct gm_state {
+        double totime;    /* total cumulative time  */
+        double breed;     /* breeder-reactor cells */
+        double futot;     /* fuel cells */
+
+        double fuseg;   /* amount of fuel to use this segment */
+        double rate;    /* rate of speed (last seg) */
+        double time;    /* time spent (last seg) */
+        double ubreed;  /* used breeder cells (last seg) */
+        double fubr;    /* fuel used per breeder cell (last seg) */
+        double fudcy;   /* how much fuel decays (last seg) */
+
+        int seg;        /* segment of the trip */
+        int distance;   /* distance travelled */
+} game = {
+ .breed = 120, .futot = 3000
+};
+
+static void
+fuel_report(void)
+{
+    ++game_cur_line;
+    write_desc("Pounds of of nuclear fuel ready for use: %d", game.futot);
+    write_desc("Operational breeder reactor cells: %d", game.breed);
+    ++game_cur_line;
+}
+
+static void
+print_conditions(void)
+{
+    write_heading (0, trip[game.seg].location);
+    write_desc("Current conditions are as follows:");
+    write_desc("  Location: %s", trip[game.seg].location);
+    write_desc("  Distance to Neptune: %d million miles.", 2701 - game.distance);
+    if(game.seg > 0)
+      {
+        write_desc("  Distance from Earth: %d million miles.", game.distance);
+	++game_cur_line;
+        write_desc("Over the last segment, your average speed was %d mph", (int)game.rate);
+        write_desc("  and you covered %d million miles in %d days.", trip[game.seg-1].distance, game.time);
+        write_desc("Time est for this total distance: %s", format_days(0.81*game.distance));
+        write_desc("Your actual cumulative time was: %s", format_days(game.totime));
+        write_desc("You used %d cells which produced %d pounds of fuel each.", game.ubreed, game.fubr);
+        if(game.fudcy > 0) 
+           write_desc("%d pounds of fuel in storage decayed into an unusable state.", game.fudcy);
+      }
+    fuel_report();
+}
+
+/* play one game round */
+static void
+one_segment(void)
+{
+    clear_game_tobot (0);
+    print_conditions();  
+    /* trade_fuel() */
+
+    write_desc("After trading:");
+    fuel_report();
+    /* engine_power(gs) */
+    game.futot -= game.fuseg;
+    /* breeder_usage(gs); */
+    game.futot -= 5*game.ubreed;
+    /* calculate_results(gs) */
+    ++game.seg;
+    /* cls(8); */
+    /* timed_banner(3, '* * Travelling * *', 0.5) */
+    getch();
 }
 
 int
@@ -182,6 +282,11 @@ main (int argc, char *argv[])
   do_intro ();
 
   /* now let's play... */
+  while(game.seg < sizeof(trip)/sizeof(struct gm_segment))
+    one_segment();
+
+  /* game over... */
+  getch();
   erase ();
   endwin ();
 
