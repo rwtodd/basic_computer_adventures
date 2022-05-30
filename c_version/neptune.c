@@ -535,7 +535,7 @@ static void
 endgame (void)
 {
   clear_game_tobot (0);
-  write_heading (0, " * * N E P T U N E ! * *");
+  write_heading (0, "* * N E P T U N E ! * *");
   write_desc ("You finally reached Neptune in %s.",
               format_days (game.totime));
   write_desc
