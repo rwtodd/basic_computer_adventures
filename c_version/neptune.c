@@ -17,6 +17,7 @@ static char buffer[GM_WID + 1]; /* oh no, it's not ... thread safe! re-write it 
 static const char spc[] = " ";  /* just define it once here */
 static int voffs = 0, hoffs = 0;        /* center the game 'window' */
 static int game_cur_line = 0;   /* current last line in game buffer */
+#define skip_line() ++game_cur_line
 
 /* in a few places we might kill the program... centralize that */
 static void
@@ -350,10 +351,10 @@ static struct gm_state
 static void
 fuel_report (void)
 {
-  ++game_cur_line;
+  skip_line();
   write_desc ("Pounds of of nuclear fuel ready for use: %d", game.futot);
   write_desc ("Operational breeder reactor cells: %d", game.breed);
-  ++game_cur_line;
+  skip_line();
 }
 
 /* describe a new location */
@@ -368,17 +369,17 @@ print_conditions (void)
   if (game.seg > 0)
     {
       write_desc ("  Distance from Earth: %d million miles.", game.distance);
-      ++game_cur_line;
+      skip_line();
       write_desc ("Over the last segment, your average speed was %d mph",
                   (int) game.rate);
       write_desc ("and you covered %d million miles in %d days.",
                   trip[game.seg - 1].distance, game.time);
-      ++game_cur_line;
+      skip_line();
       write_desc ("Time est for this total distance: %s",
                   format_days (0.81 * game.distance));
       write_desc ("Your actual cumulative time was: %s",
                   format_days (game.totime));
-      ++game_cur_line;
+      skip_line();
       write_desc ("You used %d cells which produced %d pounds of fuel each.",
                   game.ubreed, game.fubr);
       if (game.fudcy > 0)
@@ -399,8 +400,6 @@ engine_power (void)
     ("%d%% of the fuel requirements of the engines.  How many pounds",
      56 - (game.seg + 1) * 8);
   write_desc ("of nuclear fuel do you want to use on this segment?");
-
-  int restart_level = game_cur_line;
   game.fuseg = get_user_number ("Fuel to use", 0, game.futot);
 }
 
@@ -413,14 +412,13 @@ breeder_usage (void)
   int max_cells = game.breed > operable ? operable : game.breed;
   if (max_cells > seedable)
     max_cells = seedable;
-  ++game_cur_line;
+  skip_line();
   write_desc ("There are %d breeder cells here.", game.breed);
   write_desc
     ("The spent fuel from the engines can operate up to %d cells, and",
      operable);
   write_desc ("  you have enough fuel to seed up to %d cells.", seedable);
   write_desc ("How many breeder reactor cells do you want to operate?");
-  int restart_level = game_cur_line;
   game.ubreed = get_user_number ("Cells to operate", 0, max_cells);
 }
 
@@ -542,7 +540,7 @@ endgame (void)
     ("Had your engines run at 100%% efficiency the entire way, you would");
   write_desc
     ("have averaged 51,389 mph and completed the trip in exactly 6 years.");
-  game_cur_line++;
+  skip_line();
   if (game.totime <= 2220)
     write_heading (game_cur_line, "Congratulations!  Outstanding job!");
   else
@@ -556,13 +554,13 @@ endgame (void)
 
       int tm = game.totime - 2190;
       write_desc ("Your trip took longer than this by %s", format_days (tm));
-      game_cur_line++;
+      skip_line();
       int years_over = tm / 365;
       if (years_over > 3)
         years_over = 3;
       write_desc ("Your performance was %s", scale[years_over]);
     }
-  game_cur_line++;
+  skip_line();
   if (game.breed < 105)
     {
       write_desc
@@ -576,7 +574,7 @@ endgame (void)
                   game.breed);
       write_desc ("for your return trip.  Very good.");
     }
-  game_cur_line++;
+  skip_line();
   int back_to_2 = (int) (42250.0 / (8.0 + game.futot / 40.0));
   if (back_to_2 < 405)
     back_to_2 = 405;
@@ -584,7 +582,7 @@ endgame (void)
               game.futot, game.breed);
   write_desc ("cells, to get back to Theta 2 will take %s.",
               format_days (back_to_2));
-  game_cur_line++;
+  skip_line();
 }
 
 int
