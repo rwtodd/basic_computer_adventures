@@ -19,6 +19,8 @@ static int voffs = 0, hoffs = 0;        /* center the game 'window' */
 static int game_cur_line = 0;   /* current last line in game buffer */
 #define skip_line() ++game_cur_line
 
+static void kill_program (const char *msg) __attribute__ ((noreturn));
+
 /* in a few places we might kill the program... centralize that */
 static void
 kill_program (const char *msg)
@@ -106,6 +108,9 @@ clear_game_tobot (int line)
   while (line < GM_HGT)
     mvprintw (voffs + line++, hoffs, "%" stringify (GM_WID) "s", spc);
 }
+
+static void write_desc (const char *const msg, ...) __attribute__ ((format (printf,1,2)));
+static void write_prompt (const char *const msg, ...) __attribute__ ((format (printf,1,2)));
 
 /* write a description line, and keep track of which line to write on next */
 static void
@@ -246,7 +251,7 @@ do_intro (void)
 #define do_para(n) \
   game_cur_line = 2; \
   for(lnum = 0; lnum < sizeof(intro_p ## n)/sizeof(const char *); ++lnum) \
-    write_desc(intro_p ## n[lnum]);  \
+    write_desc("%s", intro_p ## n[lnum]);  \
   while(lnum++ < 10) write_desc(" "); \
   press_any_key(-1)
 
